@@ -129,4 +129,56 @@ public class MakeVideo {
     private static boolean isImage(String file) {
         return file.matches(".*\\.(jpg|jpeg|png|bmp)$");
     }
+
+    public static void generateCollage(String inputFilePath, String outputPath) {
+        List<String> files = new ArrayList<>();
+
+        // Leer archivos desde input.txt
+        try (BufferedReader br = new BufferedReader(new FileReader(inputFilePath))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                if (line.startsWith("file ")) {
+                    String filename = line.split("'")[1];
+                    files.add(filename);
+                }
+            }
+        } catch (IOException e) {
+            System.err.println("Error al leer el archivo " + inputFilePath + ": " + e.getMessage());
+            return;
+        }
+
+        if (files.size() < 4) {
+            System.err.println("Debe haber al menos 4 archivos en input.txt.");
+            return;
+        }
+
+        List<String> command = new ArrayList<>();
+        command.add("ffmpeg");
+
+        for (String file : files) {
+            command.add("-i");
+            command.add(file);
+        }
+
+        // Construcción del filtro de collage
+        StringBuilder filterComplex = new StringBuilder();
+        for (int i = 0; i < files.size(); i++) {
+            filterComplex.append(String.format("[%d:v]scale=320:240[s%d];", i, i));
+        }
+
+        filterComplex.append("[s0][s1]hstack[tmp1];");
+        filterComplex.append("[tmp1][s2]hstack[tmp2];");
+        filterComplex.append("[tmp2][s3]overlay=(main_w-overlay_w)/2:(main_h-overlay_h)/2:shortest=1[outv]");
+
+        command.add("-filter_complex");
+        command.add(filterComplex.toString());
+        command.add("-map");
+        command.add("[outv]");
+        command.add(outputPath + "/collage.mp4");
+
+        // Ejecutar ffmpeg
+        if (executeFFmpegCommand(command.toArray(new String[0]))) {
+            System.out.println("Collage generado exitosamente en " + outputPath + "/collage.mp4");
+        }
+    }
 }
