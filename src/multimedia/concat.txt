@@ -1,0 +1,7 @@
+file 'C:\Users\FAMILIA SOTO\Documents\Clases UP\Gráficas computacionales\JoseSoto_2ndAssignment\src\multimedia\normalized_Login.mp4'
+file 'C:\Users\FAMILIA SOTO\Documents\Clases UP\Gráficas computacionales\JoseSoto_2ndAssignment\src\multimedia\tiburon.mp4'
+file 'C:\Users\FAMILIA SOTO\Documents\Clases UP\Gráficas computacionales\JoseSoto_2ndAssignment\src\multimedia\normalized_Github.mp4'
+file 'C:\Users\FAMILIA SOTO\Documents\Clases UP\Gráficas computacionales\JoseSoto_2ndAssignment\src\multimedia\shark1.mp4'
+file 'C:\Users\FAMILIA SOTO\Documents\Clases UP\Gráficas computacionales\JoseSoto_2ndAssignment\src\multimedia\images.mp4'
+file 'C:\Users\FAMILIA SOTO\Documents\Clases UP\Gráficas computacionales\JoseSoto_2ndAssignment\src\multimedia\pokemon1.mp4'
+file 'C:\Users\FAMILIA SOTO\Documents\Clases UP\Gráficas computacionales\JoseSoto_2ndAssignment\src\multimedia\shark2.mp4'
