@@ -1,8 +1,8 @@
-import functions.chatGPT.IaFunctions;
 import functions.exif.ExifFunctions;
 import functions.FileOrganizer;
 import functions.ffmpeg.MakeVideo; // Import the new module
 
+import java.io.File;
 import java.util.Scanner;
 
 public class Main {
@@ -20,6 +20,7 @@ public class Main {
         // Check if there are any data
         if (metadataList.length == 0) {
             System.out.println("No files with valid metadata found.");
+            input.close();
             return;
         }
 
@@ -32,10 +33,27 @@ public class Main {
             System.out.println("File: " + meta[0] + ", Date: " + meta[1] + ", Rotation: " + meta[2]);
         }
 
+        
         // Call the function to generate the video with FFMpeg
         System.out.println("\nGenerating final video...");
         MakeVideo.generateVideo(metadataList, path);
+        
+        /*
+        String postalCardVideoPath = MakeVideo.convertImageToVideo(path+"/output1.png", path+"/output1.mp4");
+        File postalCardVideo = new File(path, "output1.mp4");
+        postalCardVideoPath = MakeVideo.normalizeVideo(postalCardVideo);
+        
+        MakeVideo.generateCollage("src/multimedia/concat.txt", "src/multimedia");
 
+        String [][]finalVideos = new String[3][1];
+        finalVideos[0][0]="src/multimedia/output1";
+        finalVideos[1][0]="src/multimedia/output2";
+        finalVideos[2][0]="src/multimedia/output3";
+        MakeVideo.generateVideo(finalVideos, path);
+        FileOrganizer.deleteFile(path+"/output1.mp4");
+        FileOrganizer.deleteFile(postalCardVideoPath);
+        */
         System.out.println("Process completed.");
+        input.close();
     }
 }

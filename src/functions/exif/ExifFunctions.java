@@ -11,7 +11,7 @@ public class ExifFunctions {
             return new String[0][0]; // Return an empty array if there's an error
         }
 
-        File[] files = folder.listFiles((dir, name) ->
+        File[] files = folder.listFiles((_, name) ->
                 name.toLowerCase().endsWith(".jpg") || name.toLowerCase().endsWith(".jpeg") ||
                         name.toLowerCase().endsWith(".png") || name.toLowerCase().endsWith(".mp4") ||
                         name.toLowerCase().endsWith(".mov") || name.toLowerCase().endsWith(".avi")

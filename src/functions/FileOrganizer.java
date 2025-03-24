@@ -1,5 +1,11 @@
 package functions;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -22,5 +28,55 @@ public class FileOrganizer {
         });
 
         return metadataArray; // Return the sorted array
+    }
+
+    public static void deleteFile(String path) {
+        File file = new File(path);
+        
+        if (!file.exists()) {
+            System.out.println("File not found: " + path);
+            return;
+        }
+    
+        if (file.delete()) {
+            System.out.println("File deleted: " + path);
+        } else {
+            System.err.println("Error: Could not delete file: " + path);
+        }
+    }
+    
+    public static boolean createConcatFile(List<String> files, String concatFile) {
+        try (PrintWriter writer = new PrintWriter(new FileWriter(concatFile))) {
+            for (String file : files) {
+                writer.println("file '" + file + "'");
+                System.out.println("Agregado a concat.txt: file '" + file + "'");
+            }
+            return true;
+        } catch (IOException e) {
+            System.err.println("Error escribiendo concat.txt: " + e.getMessage());
+            return false;
+        }
+    }
+    
+    public static boolean executeCMDCommand(String[] command) {
+        try {
+            ProcessBuilder builder = new ProcessBuilder(command);
+            builder.redirectErrorStream(true);
+            Process process = builder.start();
+
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+                reader.lines().forEach(System.out::println);
+            }
+
+            int exitCode = process.waitFor();
+            if (exitCode != 0) {
+                System.err.println("The line terminó con error: " + exitCode);
+                return false;
+            }
+            return true;
+        } catch (IOException | InterruptedException e) {
+            System.err.println("Error ejecutando: " + e.getMessage());
+            return false;
+        }
     }
 }
