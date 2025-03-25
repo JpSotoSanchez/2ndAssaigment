@@ -1,5 +1,6 @@
 import functions.exif.ExifFunctions;
 import functions.FileOrganizer;
+import functions.chatGPT.IaFunctions;
 import functions.ffmpeg.MakeVideo; // Import the new module
 
 import java.io.File;
@@ -13,6 +14,10 @@ public class Main {
         // Request the multimedia file path
         System.out.println("Enter the path of the images/videos: ");
         String path = input.nextLine();
+
+        // Request the multimedia file path
+        System.out.println("Enter the mood of the video: ");
+        String mood = input.nextLine();
 
         // Get the metadata of the files
         String[][] metadataList = ExifFunctions.GatherVideos(path);
@@ -38,13 +43,16 @@ public class Main {
         System.out.println("\nGenerating final video...");
         MakeVideo.generateVideo(metadataList, path);
         
-        /*
-        String postalCardVideoPath = MakeVideo.convertImageToVideo(path+"/output1.png", path+"/output1.mp4");
+        System.out.println(new File(path, "concat.txt").getAbsolutePath());
+        MakeVideo.generateCollage(new File(path, "concat.txt").getAbsolutePath(), path);
+        
+        String postalCardVideoPath = IaFunctions.generateImage(mood, path);
+        postalCardVideoPath = MakeVideo.convertImageToVideo(path+"/output1.png", path+"/output1.mp4");
         File postalCardVideo = new File(path, "output1.mp4");
         postalCardVideoPath = MakeVideo.normalizeVideo(postalCardVideo);
+        System.out.println(postalCardVideoPath);
         
-        MakeVideo.generateCollage("src/multimedia/concat.txt", "src/multimedia");
-
+        /* 
         String [][]finalVideos = new String[3][1];
         finalVideos[0][0]="src/multimedia/output1";
         finalVideos[1][0]="src/multimedia/output2";

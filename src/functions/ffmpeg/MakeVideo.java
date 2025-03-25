@@ -49,10 +49,6 @@ public class MakeVideo {
                 "-c:v", "libx264", "-pix_fmt", "yuv420p", "-r", "30", "-y", outputFile
         });
         System.out.println("Finished the video");
-        for (String string : deleteFiles) {
-            FileOrganizer.deleteFile(string);
-        }
-        FileOrganizer.deleteFile(concatFile);
     }
 
     public static String convertImageToVideo(String imagePath, String outputPath) {

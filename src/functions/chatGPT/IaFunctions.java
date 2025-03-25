@@ -1,153 +1,89 @@
 package functions.chatGPT;
 
-import java.io.BufferedReader;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.BufferedInputStream;
-import java.net.URL;
+import functions.FileOrganizer;
+import java.io.*;
+import java.net.*;
+import env.ChatGPTKey;
 
 public class IaFunctions {
 
-    // Función para describir la imagen usando la API de OpenAI
-    public static String describeImage(String apiKey, String imagePath) {
-        // Comando cURL para enviar la imagen a OpenAI
-        String command = String.format(
-                "curl https://api.openai.com/v1/images/generations " +
-                        "-H \"Content-Type: application/json\" " +
-                        "-H \"Authorization: Bearer %s\" " +
-                        "-F \"file=@%s\" " +
-                        "-F \"model=gpt-4-vision\"",
-                apiKey, imagePath
-        );
+    public static String generateImage(String prompt, String path) {
+        System.out.println("Solicitando imagen a DALL·E 2...");
 
-        // Ejecutamos el comando cURL usando ProcessBuilder
-        ProcessBuilder builder = new ProcessBuilder(command.split(" "));
-        builder.redirectErrorStream(true);
+        // Escapar comillas dobles dentro del prompt
+        String escapedPrompt = prompt.replace("\"", "\\\"");
 
-        StringBuilder output = new StringBuilder();
-        try {
-            Process process = builder.start();
-            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-            String line;
-            while ((line = reader.readLine()) != null) {
-                output.append(line).append("\n");
+        // Crear el JSON para la solicitud
+        String jsonRequest = String.format("{\"model\":\"dall-e-2\",\"prompt\":\"%s\",\"n\":1,\"size\":\"1024x1024\"}", escapedPrompt);
+
+        System.out.println("JSON a enviar: " + jsonRequest);  // Verificar el JSON generado
+
+        // Comando curl para solicitar la imagen
+        String[] command = {
+            "curl", "-s", "-X", "POST", "https://api.openai.com/v1/images/generations",
+            "-H", "Content-Type: application/json",
+            "-H", "Authorization: Bearer " + ChatGPTKey.getKey(),
+            "-d", jsonRequest
+        };
+
+        // Obtener la respuesta JSON con la URL de la imagen
+        String response = getResponseFromCommand(command);
+        if (response != null) {
+            String imageUrl = extractImageUrl(response);
+            if (imageUrl != null) {
+                System.out.println("Imagen generada en: " + imageUrl);
+                downloadImage(imageUrl, path);
+                return path + "/output1.png";
+            } else {
+                System.out.println("No se pudo obtener la URL de la imagen.");
             }
-            process.waitFor(); // Esperamos que el proceso termine
-        } catch (IOException | InterruptedException e) {
-            e.printStackTrace();
-            return "Error al procesar la imagen.";
+        } else {
+            System.out.println("No se obtuvo respuesta del comando.");
         }
-
-        // Parseamos la respuesta JSON de OpenAI para extraer la descripción
-        return parseDescription(output.toString());
+        return null;
     }
 
-    // Método para parsear la respuesta JSON y obtener la descripción de la imagen
-    private static String parseDescription(String jsonResponse) {
-        String description = "Descripción no encontrada.";
+    private static String getResponseFromCommand(String[] command) {
+        StringBuilder output = new StringBuilder();
         try {
-            int start = jsonResponse.indexOf("\"text\":") + 8;
+            ProcessBuilder builder = new ProcessBuilder(command);
+            builder.redirectErrorStream(true);
+            Process process = builder.start();
+
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    output.append(line);
+                }
+            }
+
+            process.waitFor();
+        } catch (IOException | InterruptedException e) {
+            System.err.println("Error ejecutando comando: " + e.getMessage());
+        }
+        return output.length() > 0 ? output.toString() : null;
+    }
+
+    private static String extractImageUrl(String jsonResponse) {
+        int index = jsonResponse.indexOf("url\":\"");
+        if (index != -1) {
+            int start = index + 6; // Longitud de "url\":\""
             int end = jsonResponse.indexOf("\"", start);
-            if (start != -1 && end != -1) {
-                description = jsonResponse.substring(start, end);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
+            return jsonResponse.substring(start, end);
         }
-        return description;
+        return null;
     }
 
-    // Función para generar audio (speech) a partir del texto usando cURL y la API de OpenAI
-    public static void generateSpeech(String apiKey, String text, String outputAudioPath) {
-        // Comando cURL para enviar el texto a la API de OpenAI para la conversión a voz
-        String command = String.format(
-                "curl https://api.openai.com/v1/audio/transcriptions " +
-                        "-H \"Authorization: Bearer %s\" " +
-                        "-H \"Content-Type: application/json\" " +
-                        "-d \"{\\\"input\\\": \\\"%s\\\"}\"",
-                apiKey, text
-        );
+    private static void downloadImage(String imageUrl, String path) {
+        String outputFile = path + "/output1.png";
+        String[] downloadCommand = {
+            "curl", "-s", "-o", outputFile, imageUrl
+        };
 
-        // Ejecutamos el comando cURL usando ProcessBuilder
-        ProcessBuilder builder = new ProcessBuilder(command.split(" "));
-        builder.redirectErrorStream(true);
-
-        StringBuilder output = new StringBuilder();
-        try {
-            Process process = builder.start();
-            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-            String line;
-            while ((line = reader.readLine()) != null) {
-                output.append(line).append("\n");
-            }
-            process.waitFor(); // Esperamos que el proceso termine
-        } catch (IOException | InterruptedException e) {
-            e.printStackTrace();
-            System.out.println("Error al convertir el texto a audio.");
-            return;
+        if (FileOrganizer.executeCMDCommand(downloadCommand)) {
+            System.out.println("Imagen guardada en: " + outputFile);
+        } else {
+            System.out.println("Error al descargar la imagen.");
         }
-
-        // Guardar el resultado como un archivo de audio (esto dependerá del formato de la respuesta)
-        saveAudio(output.toString(), outputAudioPath);
-    }
-
-    // Método para guardar el audio obtenido (suponiendo que la respuesta es un enlace para descargar el audio)
-    private static void saveAudio(String response, String outputAudioPath) {
-        try {
-            // Extraemos la URL del audio de la respuesta
-            String audioUrl = parseAudioUrl(response);
-
-            if (audioUrl == null || audioUrl.isEmpty()) {
-                System.out.println("No se encontró la URL del archivo de audio.");
-                return;
-            }
-
-            // Descargar el archivo de audio desde la URL
-            downloadAudio(audioUrl, outputAudioPath);
-
-            System.out.println("Audio guardado correctamente en: " + outputAudioPath);
-        } catch (Exception e) {
-            e.printStackTrace();
-            System.out.println("Error al guardar el audio.");
-        }
-    }
-
-    // Método para parsear la URL del audio desde la respuesta
-    private static String parseAudioUrl(String jsonResponse) {
-        // Suponemos que la respuesta contiene una URL de archivo de audio en el campo "url".
-        String url = null;
-
-        try {
-            int start = jsonResponse.indexOf("\"url\":") + 7;  // Encontrar la posición donde comienza la URL
-            int end = jsonResponse.indexOf("\"", start);      // Encontrar la posición donde termina la URL
-
-            if (start != -1 && end != -1) {
-                url = jsonResponse.substring(start, end);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        return url;
-    }
-
-    // Método para descargar el archivo de audio desde la URL y guardarlo en el disco
-    private static void downloadAudio(String audioUrl, String outputAudioPath) throws IOException {
-        URL url = new URL(audioUrl);
-        try (BufferedInputStream in = new BufferedInputStream(url.openStream());
-             FileOutputStream fileOutputStream = new FileOutputStream(outputAudioPath)) {
-            byte[] buffer = new byte[1024];
-            int bytesRead;
-            while ((bytesRead = in.read(buffer)) != -1) {
-                fileOutputStream.write(buffer, 0, bytesRead);
-            }
-        }
-    }
-
-    // Función para verificar si el archivo es una imagen
-    public static boolean esImagen(String archivo) {
-        return archivo.toLowerCase().endsWith(".jpg") || archivo.toLowerCase().endsWith(".jpeg") ||
-                archivo.toLowerCase().endsWith(".png") || archivo.toLowerCase().endsWith(".bmp");
     }
 }
