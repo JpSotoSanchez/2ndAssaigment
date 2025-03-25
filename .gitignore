@@ -25,5 +25,10 @@ bin/
 ### VS Code ###
 .vscode/
 
+idea/
+
+env/
+ChatGPTKey.java
+
 ### Mac OS ###
 .DS_Store
