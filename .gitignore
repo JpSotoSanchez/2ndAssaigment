@@ -27,8 +27,11 @@ bin/
 
 idea/
 
-env/
-ChatGPTKey.java
+### My personal key ###
+src/env/
+src/env/ChatGPTKey.java
 
 ### Mac OS ###
 .DS_Store
+
+
