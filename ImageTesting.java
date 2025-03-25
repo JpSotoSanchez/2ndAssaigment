@@ -1,47 +1,26 @@
-import java.io.File;
-import java.util.Scanner;
-import functions.chatGPT.IaFunctions;
-import functions.ffmpeg.MakeVideo;
+import java.io.*;
+
+import env.ChatGPTKey;
 
 public class ImageTesting {
     public static void main(String[] args) {
-        Scanner input = new Scanner(System.in);
+        try {
+            String command = "curl https://api.openai.com/v1/images/generations "
+                             + "-H \"Content-Type: application/json\" "
+                             + "-H \"Authorization: Bearer "+ChatGPTKey.getKey()+"\" "
+                             + "-d \"{\\\"model\\\": \\\"dall-e-3\\\", \\\"prompt\\\": \\\"a mage shark\\\", \\\"n\\\": 1, \\\"size\\\": \\\"1024x1024\\\"}\"";
 
-        // Solicitar la ruta de archivos multimedia
-        System.out.println("Enter the path of the images/videos: ");
-        String path = input.nextLine();
+            Process process = Runtime.getRuntime().exec(command);
+            int exitCode = process.waitFor();
+            System.out.println("Exit Code: " + exitCode);
 
-        // Solicitar el mood del video
-        System.out.println("Enter the mood of the video: ");
-        String mood = input.nextLine();
-
-        // Generar imagen con DALL·E 2
-        String imagePath = IaFunctions.generateImage(mood, path);
-        
-        // Verificar si la imagen se generó correctamente
-        if (imagePath == null || !(new File(imagePath)).exists()) {
-            System.err.println("Error: La imagen no se generó correctamente.");
-            input.close();
-            return;
+            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            String line;
+            while ((line = reader.readLine()) != null) {
+                System.out.println(line);
+            }
+        } catch (IOException | InterruptedException e) {
+            e.printStackTrace();
         }
-
-        // Convertir imagen a video
-        String videoPath = MakeVideo.convertImageToVideo(imagePath, path + "/output1.mp4");
-
-        // Verificar si el video se generó correctamente
-        if (videoPath == null || !(new File(videoPath)).exists()) {
-            System.err.println("Error: El video no se generó correctamente.");
-            input.close();
-            return;
-        }
-
-        // Normalizar video
-        File postalCardVideo = new File(videoPath);
-        String normalizedVideoPath = MakeVideo.normalizeVideo(postalCardVideo);
-
-        // Mostrar el resultado final
-        System.out.println("Video final guardado en: " + normalizedVideoPath);
-
-        input.close();
     }
 }

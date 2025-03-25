@@ -50,7 +50,7 @@ public class ExifFunctions {
 
                 if (line.contains("Rotation")) {
                     rotation = line.substring(line.indexOf(":") + 1).trim();
-                } else if (line.startsWith("Create Date")) {
+                } else if (line.startsWith("vCreate Date")) {
                     creationDate = line.substring(line.indexOf(":") + 1).trim();
                 }
             }

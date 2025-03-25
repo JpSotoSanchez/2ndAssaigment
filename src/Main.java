@@ -46,7 +46,8 @@ public class Main {
         System.out.println(new File(path, "concat.txt").getAbsolutePath());
         MakeVideo.generateCollage(new File(path, "concat.txt").getAbsolutePath(), path);
         
-        String postalCardVideoPath = IaFunctions.generateImage(mood, path);
+        String postalCardVideoPath="";
+        IaFunctions.generateImage(mood, path);
         postalCardVideoPath = MakeVideo.convertImageToVideo(path+"/output1.png", path+"/output1.mp4");
         File postalCardVideo = new File(path, "output1.mp4");
         postalCardVideoPath = MakeVideo.normalizeVideo(postalCardVideo);
