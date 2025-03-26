@@ -1,57 +1,88 @@
 package functions.chatGPT;
 
-import functions.FileOrganizer;
 import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
+
 import env.ChatGPTKey;
 
 public class IaFunctions {
 
-    public static void generateImage(String prompt, String path) {
-        System.out.println("Solicitando imagen a DALL·E 3...");
+    // Método para generar la imagen y guardarla
+    public static String generateImage(String prompt, String path) {
+    // Prepare the curl command as a list of arguments
+    List<String> command = new ArrayList<>();
+    command.add("curl");
+    command.add("https://api.openai.com/v1/images/generations");
+    command.add("-H");
+    command.add("Content-Type: application/json");
+    command.add("-H");
+    command.add("Authorization: Bearer " + ChatGPTKey.getKey());
+    command.add("-d");
+    command.add("\"{\\\"model\\\": \\\"dall-e-3\\\", \\\"prompt\\\": \\\""+prompt+"\\\", \\\"n\\\": 1, \\\"size\\\": \\\"1024x1024\\\"}\"");
+    
+    
+    ProcessBuilder processBuilder = new ProcessBuilder(command);
+    String url = "";
 
-        // Construir el payload JSON con formato adecuado
-        String jsonPayload = buildJsonPayload(prompt);
+    try {
+        // Execute the command
+        Process process = processBuilder.start();
         
-        // Comando curl con la estructura exacta solicitada
-        String[] command = {
-            "curl",
-            "https://api.openai.com/v1/images/generations",
-            "-H", "Content-Type: application/json",
-            "-H", "Authorization: Bearer " + ChatGPTKey.getKey(),
-            "-d", jsonPayload
-        };
+        // Wait for the process to finish
+        int exitCode = process.waitFor();
         
-        // Mostrar el comando que se ejecutará (ocultando la API key)
-        logCommand(command);
-        
-        // Ejecutar el comando
-        FileOrganizer.executeCMDCommand(command);
-    }
-
-    private static String buildJsonPayload(String prompt) {
-        // Escapar comillas en el prompt para JSON válido
-        String escapedPrompt = prompt.replace("\"", "\\\"");
-        
-        return new StringBuilder()
-            .append("{\n")
-            .append("    \"model\": \"dall-e-3\",\n")
-            .append("    \"prompt\": \"").append(escapedPrompt).append("\",\n")
-            .append("    \"n\": 1,\n")
-            .append("    \"size\": \"1024x1024\"\n")
-            .append("}")
-            .toString();
-    }
-
-    private static void logCommand(String[] command) {
-        StringBuilder loggedCommand = new StringBuilder();
-        for (String part : command) {
-            if (part.contains(ChatGPTKey.getKey())) {
-                loggedCommand.append("Authorization: Bearer *** ");
-            } else {
-                loggedCommand.append(part).append(" ");
+        if (exitCode == 0) {
+            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            String line;
+            while ((line = reader.readLine()) != null) {
+                System.out.println(line);
+                if (line.contains("\"url\"")) {
+                    url = line.substring(line.indexOf(":") + 2).trim();
+                    url = url.substring(1, url.length() - 1);  // Remove the extra quotes
+                }
             }
+            // Assuming `descargarImagen(url, path)` is your method to download the image
+            descargarImagen(url, path);
+            return path + "/output1.png";
+        } else {
+            System.out.println("Error during image generation.");
         }
-        System.out.println("Ejecutando comando:");
-        System.out.println(loggedCommand.toString().trim());
+    } catch (IOException | InterruptedException e) {
+        e.printStackTrace();
+        return "";
     }
+
+    return "";
+}
+
+    // Método para descargar la imagen usando curl
+    public static void descargarImagen(String url, String path) {
+        // Prepare the curl command as a list of arguments
+        List<String> command = new ArrayList<>();
+        command.add("curl");
+        command.add("-o");
+        command.add(path + "/output1.png");
+        command.add(url);
+    
+        ProcessBuilder processBuilder = new ProcessBuilder(command);
+        
+        try {
+            // Execute the process
+            Process process = processBuilder.start();
+            
+            // Wait for the process to finish
+            int exitCode = process.waitFor();
+            
+            if (exitCode == 0) {
+                System.out.println("Imagen descargada y guardada en " + path);
+            } else {
+                System.out.println("Hubo un error al descargar la imagen.");
+            }
+        } catch (IOException | InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+    
+    
 }

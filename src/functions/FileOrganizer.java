@@ -64,19 +64,31 @@ public class FileOrganizer {
             builder.redirectErrorStream(true);
             Process process = builder.start();
 
+            // Lee la salida del proceso
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
                 reader.lines().forEach(System.out::println);
             }
 
+            // Espera que el proceso termine y obtiene el código de salida
             int exitCode = process.waitFor();
             if (exitCode != 0) {
-                System.err.println("The line terminó con error: " + exitCode);
+                System.err.println("El proceso terminó con error: " + exitCode);
                 return false;
             }
             return true;
         } catch (IOException | InterruptedException e) {
-            System.err.println("Error ejecutando: " + e.getMessage());
+            System.err.println("Error ejecutando el comando: " + e.getMessage());
             return false;
         }
     }
+
+    // Método sobrecargado para ejecutar un comando único
+    public static boolean executeCMDCommand(String command) {
+        return executeCMDCommand(command.split(" ")); // Divide el comando en partes
+    }
+
+    
+
+
+
 }

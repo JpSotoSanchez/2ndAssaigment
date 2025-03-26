@@ -53,7 +53,11 @@ public class MakeVideo {
 
     public static String convertImageToVideo(String imagePath, String outputPath) {
         File imageFile = new File(outputPath, imagePath);
+        System.out.println(imageFile.getAbsolutePath());
+        System.out.println(imagePath);
+        System.out.println(outputPath);
         String videoFileName = imageFile.getName().replaceFirst("\\.(jpg|jpeg|png|bmp)$", ".mp4");
+        System.out.println(videoFileName);
         File videoFile = new File(outputPath, videoFileName);
 
         if (videoFile.exists()) {
