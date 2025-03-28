@@ -5,12 +5,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 import env.ChatGPTKey;
-import functions.FileOrganizer;
 
 public class IaFunctions {
 
     // Método para generar la imagen y guardarla
-    public static String generateImage(String prompt, String path) {
+    public static String generateImage(String prompt, String path, String fileName) {
     // Prepare the curl command as a list of arguments
     List<String> command = new ArrayList<>();
     command.add("curl");
@@ -44,8 +43,8 @@ public class IaFunctions {
                 }
             }
             // Assuming `descargarImagen(url, path)` is your method to download the image
-            descargarImagen(url, path);
-            return path + "/output1.png";
+            descargarImagen(url, path, fileName);
+            return path + "/" + fileName;
         } else {
             System.out.println("Error during image generation.");
         }
@@ -58,12 +57,12 @@ public class IaFunctions {
 }
 
     // Método para descargar la imagen usando curl
-    public static void descargarImagen(String url, String path) {
+    public static void descargarImagen(String url, String path, String fileName) {
         // Prepare the curl command as a list of arguments
         List<String> command = new ArrayList<>();
         command.add("curl");
         command.add("-o");
-        command.add(path + "/output1.png");
+        command.add(path + "/" + fileName);
         command.add(url);
     
         ProcessBuilder processBuilder = new ProcessBuilder(command);
@@ -102,7 +101,7 @@ public class IaFunctions {
         try {
             Process process = processBuilder.start();
         
-            int exitCode = process.waitFor();
+            int _ = process.waitFor();
             
                 BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
                 String line;

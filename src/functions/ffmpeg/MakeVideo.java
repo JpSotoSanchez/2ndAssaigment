@@ -63,7 +63,7 @@ public class MakeVideo {
         boolean success = FileOrganizer.executeCMDCommand(new String[]{
             "ffmpeg", "-loop", "1", "-i", imageFile.getAbsolutePath(), "-t", "5",
             "-vf", "scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2",
-            "-c:v", "libx264", "-crf", "23", "-preset", "fast", "-r", "30", "-pix_fmt", "yuv420p", "-an", "-y", videoFile.getAbsolutePath()
+            "-c:v", "libx264", "-crf", "23", "-preset", "fast", "-r", "30", "-pix_fmt", "yuv420p", "-y", videoFile.getAbsolutePath()
         });
 
         return success ? videoFileName : null;
@@ -86,7 +86,7 @@ public class MakeVideo {
 
         boolean success = FileOrganizer.executeCMDCommand(new String[]{
             "ffmpeg", "-i", inputFile.getAbsolutePath(), "-vf", "scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2",
-            "-c:v", "libx264", "-crf", "23", "-preset", "fast", "-r", "30", "-pix_fmt", "yuv420p", "-y", outputFile.getAbsolutePath()
+            "-c:v", "libx264", "-crf", "23", "-preset", "fast", "-r", "30", "-pix_fmt", "yuv420p", "-an","-y", outputFile.getAbsolutePath()
         });
 
         return success ? outputFile.getAbsolutePath() : inputFile.getAbsolutePath();
@@ -95,4 +95,39 @@ public class MakeVideo {
     private static boolean isImage(String file) {
         return file.matches(".*\\.(jpg|jpeg|png|bmp)$");
     }
+    
+    
+    public static void generateCollage(String txtFilePath, String centerImage, String outputFilePath) throws FileNotFoundException, IOException {
+        // Leer la lista de archivos desde un archivo de texto
+        List<String> inputFiles = new ArrayList<>();
+        try (BufferedReader br = new BufferedReader(new FileReader(txtFilePath))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                inputFiles.add(line.substring(line.indexOf("'") + 1, line.length() - 1));
+            }
+        }
+
+        int totalFiles = inputFiles.size();
+        if (totalFiles == 0) {
+            System.out.println("No hay archivos en la lista.");
+            return;
+        }
+
+        // Determinar dimensiones de la cuadrícula
+        int columns = (int) Math.ceil(Math.sqrt(totalFiles));
+        int rows = (int) Math.ceil((double) totalFiles / columns);
+        int cellSize = 320; // Tamaño de cada imagen en el collage
+        int width = columns * cellSize;
+        int height = rows * cellSize;
+
+        List<String> commandList = new ArrayList<>();
+        commandList.add("ffmpeg");
+
+        // Agregar inputs
+        for (String file : inputFiles) {
+            commandList.add("-i");
+            commandList.add(file);
+        }    
+    }
 }
+

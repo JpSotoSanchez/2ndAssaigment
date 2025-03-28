@@ -1,6 +1,3 @@
-
-
-import functions.FileOrganizer;
 import functions.chatGPT.IaFunctions;
 
 public class ProbarImagenTextoAudio {

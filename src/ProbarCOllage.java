@@ -1,10 +1,11 @@
-import functions.FileOrganizer;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+
 import functions.ffmpeg.MakeVideo;
 
 public class ProbarCOllage {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws FileNotFoundException, IOException {
         String txt = "src/multimedia/concat.txt";
-        String imagen = FileOrganizer.convertImageToBase64("src/multimedia/shark1.jpg");
-        System.out.println(imagen);
+        MakeVideo.generateCollage(txt, "src/multimedia/images.jpg", "src/multimedia/output3.mp4");
     }
 }
