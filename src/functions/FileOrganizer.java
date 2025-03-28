@@ -1,6 +1,8 @@
 package functions;
 
+import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -9,6 +11,8 @@ import java.io.PrintWriter;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
+
+import javax.imageio.ImageIO;
 
 public class FileOrganizer {
     public static String[][] sortByDate(String[][] metadataArray) {
@@ -57,6 +61,7 @@ public class FileOrganizer {
             return false;
         }
     }
+
     
     public static boolean executeCMDCommand(String[] command) {
         try {
@@ -87,7 +92,44 @@ public class FileOrganizer {
         return executeCMDCommand(command.split(" ")); // Divide el comando en partes
     }
 
-    
+    public static boolean executeCMDCommand(List<String> command) {
+        try {
+            ProcessBuilder builder = new ProcessBuilder(command);
+            builder.redirectErrorStream(true);
+            Process process = builder.start();
+
+            // Lee la salida del proceso
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+                reader.lines().forEach(System.out::println);
+            }
+
+            // Espera que el proceso termine y obtiene el código de salida
+            int exitCode = process.waitFor();
+            if (exitCode != 0) {
+                System.err.println("El proceso terminó con error: " + exitCode);
+                return false;
+            }
+            return true;
+        } catch (IOException | InterruptedException e) {
+            System.err.println("Error ejecutando el comando: " + e.getMessage());
+            return false;
+        }
+    }
+
+     public static String convertImageToBase64(String imagePath) {
+        try {
+            File file = new File(imagePath);
+            BufferedImage image = ImageIO.read(file);
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            ImageIO.write(image, "png", outputStream);
+            byte[] imageBytes = outputStream.toByteArray();
+            return Base64.getEncoder().encodeToString(imageBytes);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
 
 
 

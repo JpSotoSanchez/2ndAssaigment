@@ -4,6 +4,7 @@ import functions.chatGPT.IaFunctions;
 import functions.ffmpeg.MakeVideo; // Import the new module
 
 import java.io.File;
+import java.util.List;
 import java.util.Scanner;
 
 public class Main {
@@ -41,20 +42,18 @@ public class Main {
         
         // Call the function to generate the video with FFMpeg
         System.out.println("\nGenerating final video...");
-        MakeVideo.generateVideo(metadataList, path);
+        List<String> deleteFiles = MakeVideo.generateVideo(metadataList, path);
         
         System.out.println(new File(path, "concat.txt").getAbsolutePath());
-        MakeVideo.generateCollage(new File(path, "concat.txt").getAbsolutePath(), path);
+        //MakeVideo.generateCollage(new File(path, "concat.txt").getAbsolutePath(), path);
         
-        String postalCardVideoPath = IaFunctions.generateImage(mood, path);
-        postalCardVideoPath = MakeVideo.convertImageToVideo("/output1.png", path);
-        File postalCardVideo = new File(path, "output1.mp4");
-        postalCardVideoPath = MakeVideo.normalizeVideo(postalCardVideo);
-        System.out.println(postalCardVideoPath);
+        //String postalCardVideoPath = IaFunctions.generateImage(mood, path);
+        
+        //System.out.println(postalCardVideoPath);
         
         /* 
         String [][]finalVideos = new String[3][1];
-        finalVideos[0][0]="src/multimedia/output1";
+        finalVideos[0][0]="postalCardVideoPath";
         finalVideos[1][0]="src/multimedia/output2";
         finalVideos[2][0]="src/multimedia/output3";
         MakeVideo.generateVideo(finalVideos, path);
@@ -62,6 +61,12 @@ public class Main {
         FileOrganizer.deleteFile(postalCardVideoPath);
         */
         System.out.println("Process completed.");
+        /* 
+        for (String string : deleteFiles) {
+            FileOrganizer.deleteFile(string);
+        }
+        FileOrganizer.deleteFile("src/multimedia/concat.txt");
+        */
         input.close();
     }
 }

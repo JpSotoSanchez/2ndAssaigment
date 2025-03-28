@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import env.ChatGPTKey;
+import functions.FileOrganizer;
 
 public class IaFunctions {
 
@@ -84,5 +85,38 @@ public class IaFunctions {
         }
     }
     
+
+
+    public static String generateDescription(String url){
+        String[] command = {
+            "curl",
+            "https://api.openai.com/v1/chat/completions",
+            "-H", "Content-Type: application/json",
+            "-H", "Authorization: Bearer " + ChatGPTKey.getKey(),
+            "-d", "\"{\\\"model\\\": \\\"gpt-4o-mini\\\", \\\"messages\\\": [{\\\"role\\\": \\\"user\\\", \\\"content\\\": [{\\\"type\\\": \\\"text\\\", \\\"text\\\": \\\"Describe this image in English:\\\"},{\\\"type\\\": \\\"image_url\\\", \\\"image_url\\\": {\\\"url\\\": \\\"" + url + "\\\"}}]}], \\\"max_tokens\\\": 200}\""
+        };
+            
+        ProcessBuilder processBuilder = new ProcessBuilder(command);
+        String description = "";
     
+        try {
+            Process process = processBuilder.start();
+        
+            int exitCode = process.waitFor();
+            
+                BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    System.out.println(line);
+                    if (line.contains("\"content\":")){
+                        description=line.substring(line.indexOf(":")+2, line.length()-1);
+                    }        
+                }                
+                return description;
+            
+        } catch (IOException | InterruptedException e) {
+            e.printStackTrace();
+            return description;
+        }
+    }
 }
