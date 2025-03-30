@@ -43,10 +43,10 @@ public class Main {
         
         // Call the function to generate the video with FFMpeg
         System.out.println("\nGenerating final video...");
-        List<String> deleteFiles = MakeVideo.generateVideo(metadataList, path);
+        List<String> deleteFiles = MakeVideo.generateVideo(metadataList, path, "concat.txt", "output2.mp4");
         
         System.out.println(new File(path, "concat.txt").getAbsolutePath());
-        MakeVideo.generateCollage(path+"/concat.txt", path+"/output3_1.mp4", path);
+        String comandoCollage = MakeVideo.generateCollage("/concat.txt", "output3.mp4", path);
     
         String postalCardVideoPath = IaFunctions.generateImageFromText(mood, path, "PostalCard1.png");
         
@@ -55,17 +55,18 @@ public class Main {
         
         String [][]finalVideos = new String[3][1];
         finalVideos[0][0]=postalCardVideoPath;
-        finalVideos[1][0]="src/multimedia/output2.mp4";
-        finalVideos[2][0]="src/multimedia/output3.mp4";
-        List<String> deleteFiles2 = MakeVideo.generateVideo(finalVideos, path);
+        finalVideos[1][0]="output2.mp4";
+        finalVideos[2][0]="output3.mp4";
+        List<String> deleteFiles2 = MakeVideo.generateVideo(finalVideos, path, "concat2.txt", "output4.mp4");
         System.out.println("Process completed.");
         
-        for (String string : deleteFiles) {
-            FileOrganizer.deleteFile(string);
-        }
         for (String string : deleteFiles2) {
             FileOrganizer.deleteFile(string);
         }
+        for (String string : deleteFiles) {
+            FileOrganizer.deleteFile(string);
+        }
+        System.out.println(comandoCollage);
         input.close();
     }
 }

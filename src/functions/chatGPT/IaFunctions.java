@@ -45,7 +45,7 @@ public class IaFunctions {
                 }
                 // Assuming `descargarImagen(url, path)` is your method to download the image
                 downloadImage(url, path, fileName);
-                return path + "/" + fileName;
+                return fileName;
             } else {
                 System.out.println("Error during image generation.");
             }

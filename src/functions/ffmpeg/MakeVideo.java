@@ -4,14 +4,16 @@ import java.io.*;
 import java.util.*;
 
 import functions.FileOrganizer;
+import functions.chatGPT.IaFunctions;
 
 public class MakeVideo {
 
-    public static List<String> generateVideo(String[][] metadata, String path) {
-        String concatFile = path + "/concat.txt";
-        String outputFile = path + "/output2.mp4";
+    public static List<String> generateVideo(String[][] metadata, String path, String txtNameString, String outFileString) {
+        String concatFile = path + "/"+txtNameString;
+        String outputFile = path + "/"+outFileString;
 
         FileOrganizer.deleteFile(concatFile);
+        FileOrganizer.deleteFile(outputFile);
 
         List<String> finalFiles = new ArrayList<>();
         List<String> deleteFiles = new ArrayList<>();
@@ -96,10 +98,10 @@ public class MakeVideo {
     }
     
     
-    public static String generateCollage(String txtFile, String outputFilePath, String path) {
+    public static String generateCollage(String txtFile, String outputFile, String path) {
         BufferedReader reader = null;
         try {
-            reader = new BufferedReader(new FileReader(txtFile));
+            reader = new BufferedReader(new FileReader(path+"/"+txtFile));
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         }
@@ -192,52 +194,61 @@ public class MakeVideo {
         }
         command.append("]vstack=inputs=").append(rows).append("[out]\" ");
 
+        String outputFile1 = "temp0.mp4";
         // Especificar la salida
-        command.append("-map \"[out]\" -c:v libx264 -crf 23 -preset veryfast -shortest "+outputFilePath);
+        command.append("-map \"[out]\" -c:v libx264 -crf 23 -preset veryfast -shortest "+path+"/"+outputFile1);
         FileOrganizer.executeCMDCommand(command.toString());
         System.out.println("Collage made");
-        String outputFile2 = path+"/"+"output3_2.mp4";
-        MakeVideo.cutVideoFiveSeconds(outputFilePath, outputFile2);
+        
+        String outputFile2 = "temp1.mp4";
+        MakeVideo.cutVideoFiveSeconds(outputFile1, outputFile2, path);
         System.out.println("Cut it to 5 seconds");
-        String outputFileFinal = path+"/"+"output3.mp4";
-        MakeVideo.overlayImage("src/multimedia/spinosaurus.jpg", outputFile2, outputFileFinal);
+        
+        
+        String frame = MakeVideo.saveFrame(outputFile2, path, "frame.png");
+        System.out.println("Made the frame");
+        
+        MakeVideo.overlayImage("shark1.jpg", outputFile2, outputFile, path);
+        //MakeVideo.overlayImage(path+IaFunctions.generateImageFromImage(url, path, outputFileFinal), outputFile2, outputFileFinal);
         System.out.println("Image overlayed");
-        MakeVideo.saveFrame(outputFileFinal, path+"/"+"frame.png");
+        FileOrganizer.deleteFile(path+"/"+outputFile1);
+        FileOrganizer.deleteFile(path+"/"+outputFile2);
         return command.toString();
     }
 
-    public static void cutVideoFiveSeconds(String inputFile, String outputFile){
+    public static void cutVideoFiveSeconds(String inputFile, String outputFile, String path){
         String[] command = {
             "ffmpeg",
-            "-i", inputFile,  // Video de entrada
-            "-t", "00:00:05",  // Saltar los primeros 5 segundos
-            "-c", "copy", "-y",       // Copiar los códecs sin recodificar
-            outputFile        // Video de salida
+            "-i", path+"/"+inputFile,  
+            "-t", "00:00:05",  
+            "-c", "copy", "-y",       
+            path+"/"+outputFile        
         };
         FileOrganizer.executeCMDCommand(command);
     }
-    public static void overlayImage(String imagePath, String videoPath, String outputFilePath){
+    public static void overlayImage(String imageName, String videoName, String outputFileName, String path){
         String[] command = {
             "ffmpeg", 
-            "-i", videoPath,
-            "-i", imagePath,
+            "-i", path+"/"+videoName,
+            "-i", path+"/"+imageName,
             "-filter_complex",
             "[0:v][1:v]overlay=(W-w)/2:(H-h)/2",
             "-c:a", "copy", "-y",
-            outputFilePath
+            path+"/"+outputFileName
         };        
         FileOrganizer.executeCMDCommand(command);
     }
-    public static void saveFrame(String videoPath, String savedFramePath) {
+    public static String saveFrame(String video, String path, String savedFrameName) {
         String[] command = {
             "ffmpeg",
             "-ss", "00:00:01",   // Posición en el tiempo (10 segundos)
-            "-i", videoPath,
+            "-i", path+"/"+video,
             "-frames:v", "1",
             "-update", "1", "-y",      // Sobrescribe la imagen de salida
-            savedFramePath
+            path+"/"+savedFrameName
         };
         FileOrganizer.executeCMDCommand(command);
+        return savedFrameName;
     }       
 }
 

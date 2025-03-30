@@ -1,0 +1,7 @@
+file 'F:\Clases UP\Gráficas computacionales\JoseSoto_2ndAssigment\src\multimedia\normalized_Github.mp4'
+file 'F:\Clases UP\Gráficas computacionales\JoseSoto_2ndAssigment\src\multimedia\normalized_Login.mp4'
+file 'F:\Clases UP\Gráficas computacionales\JoseSoto_2ndAssigment\src\multimedia\normalized_video_pokemon1.mp4'
+file 'F:\Clases UP\Gráficas computacionales\JoseSoto_2ndAssigment\src\multimedia\normalized_video_shark1.mp4'
+file 'F:\Clases UP\Gráficas computacionales\JoseSoto_2ndAssigment\src\multimedia\normalized_video_shark2.mp4'
+file 'F:\Clases UP\Gráficas computacionales\JoseSoto_2ndAssigment\src\multimedia\normalized_Society vs Spinosaurus edit meme.mp4'
+file 'F:\Clases UP\Gráficas computacionales\JoseSoto_2ndAssigment\src\multimedia\normalized_whasap.mp4'
