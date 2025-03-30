@@ -164,16 +164,14 @@ public class IaFunctions {
         }
     }
 
-    public static void generateAudio(String description){
+    public static void generateAudio(String description, String path, String fileName){
         String[] command = {
             "curl",
-            "https://api.openai.com/v1/chat/completions",
+            "https://api.openai.com/v1/audio/speech",
             "-H", "Content-Type: application/json",
             "-H", "Authorization: Bearer " + ChatGPTKey.getKey(),
-            "-d", "\"{\\\"model\\\": \\\"gpt-4o-audio-preview\\\", \\\"modalities\\\": [\\\"text\\\", \\\"audio\\\"], \\\"audio\\\": { \\\"voice\\\": \\\"alloy\\\", \\\"format\\\": \\\"wav\\\" }, \\\"messages\\\": [{\\\"role\\\": \\\"user\\\", \\\"content\\\": \\\""+description+"\\\"}]}\""
-        };
-        FileOrganizer.executeCMDCommand(command);
-        
+            "-d", "\"{\\\"model\\\": \\\"gpt-4o-mini-tts\\\", \\\"input\\\": \\\""+description+"\\\", \\\"voice\\\": \\\"coral\\\", \\\"instructions\\\": \\\"Speak in a cheerful and positive tone.\\\"}\"",
+            "--output", path+"/"+fileName};
+            FileOrganizer.executeCMDCommand(command);
     }
-
 }

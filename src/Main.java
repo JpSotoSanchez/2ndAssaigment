@@ -46,7 +46,7 @@ public class Main {
         List<String> deleteFiles = MakeVideo.generateVideo(metadataList, path, "concat.txt", "output2.mp4");
         
         System.out.println(new File(path, "concat.txt").getAbsolutePath());
-        String comandoCollage = MakeVideo.generateCollage("/concat.txt", "output3.mp4", path);
+        MakeVideo.generateCollage("/concat.txt", "output3.mp4", path);
     
         String postalCardVideoPath = IaFunctions.generateImageFromText(mood, path, "PostalCard1.png");
         
@@ -66,7 +66,6 @@ public class Main {
         for (String string : deleteFiles) {
             FileOrganizer.deleteFile(string);
         }
-        System.out.println(comandoCollage);
         input.close();
     }
 }

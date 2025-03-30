@@ -249,6 +249,24 @@ public class MakeVideo {
         };
         FileOrganizer.executeCMDCommand(command);
         return savedFrameName;
-    }       
+    }
+    
+    public static void generateAudioFrom64(String path, String audioName, String base64){
+        String command [] = {
+            "ffmpeg", 
+            "-y", 
+            "-f", 
+            "s16le", 
+            "-ar", 
+            "44100", 
+            "-ac", 
+            "2", 
+            "-i", 
+            "<(echo '"+base64+"' | base64 --decode)", 
+            path+"/"+audioName
+        };
+        FileOrganizer.executeCMDCommand(command);
+        System.out.println("Audio generated in" +path+"/"+audioName);
+    }
 }
 
