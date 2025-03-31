@@ -123,6 +123,7 @@ public class FileOrganizer {
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
             ImageIO.write(image, "png", outputStream);
             byte[] imageBytes = outputStream.toByteArray();
+            System.out.println("The image was converted succesfully");
             return Base64.getEncoder().encodeToString(imageBytes);
         } catch (Exception e) {
             e.printStackTrace();
