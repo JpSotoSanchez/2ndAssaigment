@@ -36,13 +36,13 @@ public class MakeVideo {
                 finalFiles.add(normalizedFile);
                 deleteFiles.add(normalizedFile);
             } else {
-                System.err.println("Archivo no encontrado: " + inputFile.getAbsolutePath());
+                System.err.println("File not Found: " + inputFile.getAbsolutePath());
             }
         }
 
         if (!FileOrganizer.createConcatFile(finalFiles, concatFile)) return deleteFiles;
 
-        System.out.println("Ejecutando FFmpeg para concatenar:");
+        System.out.println("Executing FFmpeg to concatenate:");
         boolean success = FileOrganizer.executeCMDCommand(new String[]{
             "ffmpeg", "-f", "concat", "-safe", "0", "-i", concatFile, "-c:v", "libx264", "-crf", "23", "-preset", "fast", "-r", "30", "-pix_fmt", "yuv420p", "-y", outputFile
         });
