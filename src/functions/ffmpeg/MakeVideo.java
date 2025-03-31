@@ -20,7 +20,6 @@ public class MakeVideo {
 
         for (String[] meta : metadata) {
             String file = meta[0];
-            File inputFile = new File(path, file);
 
             if (isImage(file)) {
                 String videoFile = convertImageToVideo(file, path, width, height);
@@ -28,27 +27,33 @@ public class MakeVideo {
                     deleteFiles.add(path+"/"+videoFile);
                     
                     String normalizedFile = normalizeVideo(path, videoFile, width, height);
-                    deleteFiles.add(normalizedFile);
+                    deleteFiles.add(path+"/"+normalizedFile);
                     
-                    String audioName = IaFunctions.generateAudioFromBase64ForImages(path, file,"speech.mp3");
+                    String audioName = IaFunctions.generateAudioFromBase64ForImages(path, file,"audio_" + file.replaceFirst("\\.(jpg|jpeg|png|bmp)$", ".mp3"));
+                    deleteFiles.add(path+"/"+audioName);
+
                     String normalizedWithAudio = addAudio(path, normalizedFile, audioName);
                     System.out.println(audioName);
-                    FileOrganizer.deleteFile(path+"/"+audioName);
-                    finalFiles.add(path+"/"+normalizedWithAudio);
+                    finalFiles.add(normalizedWithAudio);
+                    deleteFiles.add(path+"/"+normalizedWithAudio);
                     
                 }
-            } else if (inputFile.exists()) {
+            } else if (isVideo(file)) {
                 String normalizedFile = normalizeVideo(path, file, width, height);
                 deleteFiles.add(path+"/"+normalizedFile);
                 
-                String audioName = IaFunctions.generateAudioFromBase64ForImages(path, file,"speech.mp3");
+                String frame = MakeVideo.saveFrame(file, path, "frame.png");
+                deleteFiles.add(frame);
+                
+                String audioName = IaFunctions.generateAudioFromBase64ForImages(path, frame,"audio_" + file.replaceFirst("\\.(mp4|mov|avi)$", ".mp3"));
+                deleteFiles.add(path+"/"+audioName);
+
                 String normalizedWithAudio = addAudio(path, normalizedFile, audioName);
                 System.out.println(audioName);
-                finalFiles.add(path+"/"+normalizedWithAudio);
-                FileOrganizer.deleteFile(path+"/"+audioName);
+                finalFiles.add(normalizedWithAudio);
                 deleteFiles.add(path+"/"+normalizedWithAudio);
             } else {
-                System.err.println("File not Found: " + inputFile.getAbsolutePath());
+                System.err.println("File not Found: " + path+"/"+file);
             }
         }
 
@@ -107,6 +112,10 @@ public class MakeVideo {
 
     private static boolean isImage(String file) {
         return file.matches(".*\\.(jpg|jpeg|png|bmp)$");
+    }
+
+    private static boolean isVideo(String file) {
+        return file.matches(".*\\.(mov|mp4|avi)$");
     }
     
     
@@ -302,6 +311,27 @@ public class MakeVideo {
         };
         FileOrganizer.executeCMDCommand(command);
         return outputFile;
+    }
+
+    public static List<String> generateFinalVideo(String[][] metadata, String path, String txtNameString, String outFileString, int width, int height) {
+        String concatFile = path + "/"+txtNameString;
+        String outputFile = path + "/"+outFileString;
+
+        FileOrganizer.deleteFile(concatFile);
+        FileOrganizer.deleteFile(outputFile);
+
+        List<String> finalFiles = new ArrayList<>();
+        List<String> deleteFiles = new ArrayList<>();
+
+        if (!FileOrganizer.createConcatFile(finalFiles, concatFile)) return deleteFiles;
+
+        System.out.println("Executing FFmpeg to concatenate:");
+        boolean success = FileOrganizer.executeCMDCommand(new String[]{
+            "ffmpeg", "-f", "concat", "-safe", "0", "-i", concatFile, "-c:v", "libx264", "-crf", "23", "-preset", "fast", "-r", "30", "-pix_fmt", "yuv420p", "-y", outputFile
+        });
+
+        System.out.println("Finished the video");
+        return deleteFiles;
     }
 }
 

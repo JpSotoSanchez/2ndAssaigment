@@ -62,7 +62,7 @@ public class Main {
         finalVideos[0][0]=postalCardVideoPath;
         finalVideos[1][0]=videoFinal2;
         finalVideos[2][0]=videoFinal3;
-        List<String> deleteFiles2 = MakeVideo.generateVideo(finalVideos, path, "concat2.txt", "output4.mp4", width, height);
+        List<String> deleteFiles2 = MakeVideo.generateFinalVideo(finalVideos, path, "concat2.txt", "output4.mp4", width, height);
         System.out.println("Process completed.");
         
         for (String string : deleteFiles2) {

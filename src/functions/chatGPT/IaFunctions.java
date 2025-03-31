@@ -139,7 +139,9 @@ public class IaFunctions {
 
     public static String generateAudioFromBase64ForImages(String path, String imageName, String outputFile){
         String description = base64ToDescription(path, imageName);
+        System.out.println(description);
         description = normalizeDescriptionForImages(description);
+        System.out.println(description);
         String audioName = generateAudioFromText(description, path, outputFile);
         System.out.println("Audio made in: "+path+"/"+outputFile);
         return audioName;
@@ -147,8 +149,10 @@ public class IaFunctions {
     public static String generateAudioFromBase64ForVideos(String path, String videoName, String outputFile){
         String frame = MakeVideo.saveFrame(videoName, path, "videoFrame.png");
         String description = base64ToDescription(path, frame);
+        System.out.println(description);
         int seconds = ExifFunctions.extractDuration(path, videoName);
         description = normalizeDescriptionForVideos(description,seconds);
+        System.out.println(description);
         String audioName = generateAudioFromText(description, path, outputFile);
         System.out.println("Audio made in: "+path+"/"+outputFile);
         FileOrganizer.deleteFile(path+"/"+frame);
@@ -288,13 +292,13 @@ public class IaFunctions {
     public static String normalizeDescriptionForImages(String description){
         List<String> command = new ArrayList<>();
         command.add("curl");
-        command.add("https://api.openai.com/v1/images/generations");
+        command.add("https://api.openai.com/v1/responses");
         command.add("-H");
         command.add("Content-Type: application/json");
         command.add("-H");
         command.add("Authorization: Bearer " + ChatGPTKey.getKey());
         command.add("-d");
-        command.add("\"{\\\"model\\\": \\\"gpt-4o\\\", \\\"input\\\": \\\"Give me the resume in 12-14 words of the following description"+description+"\\\"}\"");
+        command.add("\"{\\\"model\\\": \\\"gpt-4o\\\", \\\"input\\\": \\\"Give me the resume in 12-14 words of the following description: "+description+"\\\"}\"");
         
         String nDescription = "";
 
@@ -315,6 +319,7 @@ public class IaFunctions {
                         nDescription = line.substring(line.indexOf(":") + 2).trim();
                         nDescription = nDescription.substring(1, nDescription.length() - 1);  // Remove the extra quotes
                         nDescription = nDescription.replaceAll("[^a-zA-Z0-9\\sáéíóúÁÉÍÓÚñÑ.,]", "");
+                        return nDescription;
                     }
                 }
                 return nDescription;
@@ -333,7 +338,7 @@ public class IaFunctions {
         int words = (15/5)*duration;
         List<String> command = new ArrayList<>();
         command.add("curl");
-        command.add("https://api.openai.com/v1/images/generations");
+        command.add("https://api.openai.com/v1/responses");
         command.add("-H");
         command.add("Content-Type: application/json");
         command.add("-H");
@@ -360,6 +365,7 @@ public class IaFunctions {
                         nDescription = line.substring(line.indexOf(":") + 2).trim();
                         nDescription = nDescription.substring(1, nDescription.length() - 1);  // Remove the extra quotes
                         nDescription = nDescription.replaceAll("[^a-zA-Z0-9\\sáéíóúÁÉÍÓÚñÑ.,]", "");
+                        return nDescription;
                     }
                 }
                 return nDescription;
