@@ -1,3 +1,0 @@
-file 'F:\Clases UP\Gráficas computacionales\JoseSoto_2ndAssigment\src\multimedia\normalized_video_PostalCard1.mp4'
-file 'F:\Clases UP\Gráficas computacionales\JoseSoto_2ndAssigment\src\multimedia\normalized_output2.mp4'
-file 'F:\Clases UP\Gráficas computacionales\JoseSoto_2ndAssigment\src\multimedia\normalized_output3.mp4'

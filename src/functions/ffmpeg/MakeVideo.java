@@ -8,7 +8,7 @@ import functions.chatGPT.IaFunctions;
 
 public class MakeVideo {
 
-    public static List<String> generateVideo(String[][] metadata, String path, String txtNameString, String outFileString) {
+    public static List<String> generateVideo(String[][] metadata, String path, String txtNameString, String outFileString, int width, int height) {
         String concatFile = path + "/"+txtNameString;
         String outputFile = path + "/"+outFileString;
 
@@ -23,16 +23,16 @@ public class MakeVideo {
             File inputFile = new File(path, file);
 
             if (isImage(file)) {
-                String videoFile = convertImageToVideo(file, path);
+                String videoFile = convertImageToVideo(file, path, width, height);
                 if (videoFile != null) {
                     File videoFilePath = new File(path, videoFile);
                     deleteFiles.add(videoFilePath.getAbsolutePath());
-                    String normalizedFile = normalizeVideo(videoFilePath);
+                    String normalizedFile = normalizeVideo(videoFilePath, width, height);
                     finalFiles.add(normalizedFile);
                     deleteFiles.add(normalizedFile);
                 }
             } else if (inputFile.exists()) {
-                String normalizedFile = normalizeVideo(inputFile);
+                String normalizedFile = normalizeVideo(inputFile, width, height);
                 finalFiles.add(normalizedFile);
                 deleteFiles.add(normalizedFile);
             } else {
@@ -51,7 +51,7 @@ public class MakeVideo {
         return deleteFiles;
     }
 
-    public static String convertImageToVideo(String imagePath, String outputPath) {
+    public static String convertImageToVideo(String imagePath, String outputPath, int width, int height) {
         File imageFile = new File(outputPath, imagePath);
         String videoFileName = "video_" + imageFile.getName().replaceFirst("\\.(jpg|jpeg|png|bmp)$", ".mp4");
         File videoFile = new File(outputPath, videoFileName);
@@ -63,14 +63,14 @@ public class MakeVideo {
         System.out.println("Ejecutando FFmpeg para convertir imagen a video...");
         boolean success = FileOrganizer.executeCMDCommand(new String[]{
             "ffmpeg", "-loop", "1", "-i", imageFile.getAbsolutePath(), "-t", "5",
-            "-vf", "scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2",
+            "-vf", "scale="+width+":"+height+":force_original_aspect_ratio=decrease,pad="+width+":"+height+":(ow-iw)/2:(oh-ih)/2",
             "-c:v", "libx264", "-crf", "23", "-preset", "fast", "-r", "30", "-pix_fmt", "yuv420p", "-y", videoFile.getAbsolutePath()
         });
 
         return success ? videoFileName : null;
     }
 
-    public static String normalizeVideo(File inputFile) {
+    public static String normalizeVideo(File inputFile, int width, int height) {
         String fileName = inputFile.getName();
         if (fileName.startsWith("normalized_")) {
             return inputFile.getAbsolutePath();
@@ -86,7 +86,7 @@ public class MakeVideo {
         System.out.println("Normalizando " + inputFile.getAbsolutePath());
 
         boolean success = FileOrganizer.executeCMDCommand(new String[]{
-            "ffmpeg", "-i", inputFile.getAbsolutePath(), "-vf", "scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2",
+            "ffmpeg", "-i", inputFile.getAbsolutePath(), "-vf", "scale="+width+":"+height+":force_original_aspect_ratio=decrease,pad="+width+":"+height+":(ow-iw)/2:(oh-ih)/2",
             "-c:v", "libx264", "-crf", "23", "-preset", "fast", "-r", "30", "-pix_fmt", "yuv420p", "-an","-y", outputFile.getAbsolutePath()
         });
 
@@ -98,7 +98,7 @@ public class MakeVideo {
     }
     
     
-    public static String generateCollage(String txtFile, String outputFile, String path) {
+    public static String generateCollage(String txtFile, String outputFile, String path, int width, int height) {
         BufferedReader reader = null;
         try {
             reader = new BufferedReader(new FileReader(path+"/"+txtFile));
@@ -133,15 +133,15 @@ public class MakeVideo {
         command.append("-filter_complex \"");
 
         // Calcular dimensiones para cada video
-        int height = 1080 / rows;
-        int width = 1920 / cols;
-        System.out.println("Height: " + height);
-        System.out.println("Width: " + width);
+        int nHeight = height / rows;
+        int nWidth = width / cols;
+        System.out.println("Height: " + nHeight);
+        System.out.println("Width: " + nWidth);
 
         // Escalar cada video y asignarle una etiqueta [vX]
         for (int i = 0; i < numVideos; i++) {
             command.append("[").append(i).append(":v]scale=")
-                   .append(width).append("x").append(height)
+                   .append(nWidth).append("x").append(nHeight)
                    .append("[v").append(i).append("]; ");
         }
 
@@ -170,7 +170,7 @@ public class MakeVideo {
                     // El ancho deseado para la fila es cols*width.
                     String paddedRow = rowLabel + "p";
                     command.append("[").append(rowLabel).append("]")
-                           .append("pad=").append(cols * width).append(":").append(height)
+                           .append("pad=").append(cols * nWidth).append(":").append(nHeight)
                            .append(":0:0:black[").append(paddedRow).append("]; ");
                     rowLabel = paddedRow; // Actualizamos la etiqueta para usar la fila ya paddeada.
                 }
@@ -207,12 +207,15 @@ public class MakeVideo {
         
         String frame = MakeVideo.saveFrame(outputFile2, path, "frame.png");
         System.out.println("Made the frame");
+
+        String postalCard = IaFunctions.generatePostalCardFromBase64(path, frame, "PostalCard2.png");
         
-        MakeVideo.overlayImage("shark1.jpg", outputFile2, outputFile, path);
-        //MakeVideo.overlayImage(path+IaFunctions.generateImageFromImage(url, path, outputFileFinal), outputFile2, outputFileFinal);
+
+        MakeVideo.overlayImage(postalCard, outputFile2, outputFile, path);
         System.out.println("Image overlayed");
         FileOrganizer.deleteFile(path+"/"+outputFile1);
         FileOrganizer.deleteFile(path+"/"+outputFile2);
+        FileOrganizer.deleteFile(path+"/"+frame);
         return command.toString();
     }
 
@@ -226,18 +229,20 @@ public class MakeVideo {
         };
         FileOrganizer.executeCMDCommand(command);
     }
-    public static void overlayImage(String imageName, String videoName, String outputFileName, String path){
+
+    public static void overlayImage(String imageName, String videoName, String outputFileName, String path) {
         String[] command = {
             "ffmpeg", 
-            "-i", path+"/"+videoName,
-            "-i", path+"/"+imageName,
+            "-i", path + "/" + videoName,
+            "-i", path + "/" + imageName,
             "-filter_complex",
-            "[0:v][1:v]overlay=(W-w)/2:(H-h)/2",
+            "[1:v]scale=iw/1.5:ih/1.5[scaled];[0:v][scaled]overlay=(W-w)/2:(H-h)/2",
             "-c:a", "copy", "-y",
-            path+"/"+outputFileName
+            path + "/" + outputFileName
         };        
         FileOrganizer.executeCMDCommand(command);
     }
+
     public static String saveFrame(String video, String path, String savedFrameName) {
         String[] command = {
             "ffmpeg",

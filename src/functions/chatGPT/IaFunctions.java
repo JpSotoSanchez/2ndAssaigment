@@ -2,31 +2,13 @@ package functions.chatGPT;
 
 import java.io.*;
 import java.net.HttpURLConnection;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.net.URL;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.nio.file.Files;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.List;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-
-import java.util.Arrays;
-import java.util.stream.Stream;
 import java.util.Scanner;
-
 
 import env.ChatGPTKey;
 import functions.FileOrganizer;
@@ -181,66 +163,71 @@ public class IaFunctions {
 
     public static String base64ToDescription(String path, String imageName) {
         String image64 = FileOrganizer.convertImageToBase64(path + "/" + imageName);
-        try {
-
-            // Construcción del cuerpo de la petición
-            JSONObject imageObject = new JSONObject();
-            imageObject.put("type", "image_url");
-            imageObject.put("image_url", new JSONObject().put("url", "data:image/jpeg;base64," + image64));
-
-            JSONObject textObject = new JSONObject();
-            textObject.put("type", "text");
-            textObject.put("text", "Describe this image in English and in 12 words:");
-
-            JSONArray contentArray = new JSONArray();
-            contentArray.put(textObject);
-            contentArray.put(imageObject);
-
-            JSONObject userMessage = new JSONObject();
-            userMessage.put("role", "user");
-            userMessage.put("content", contentArray);
-
-            JSONArray messagesArray = new JSONArray();
-            messagesArray.put(userMessage);
-
-            JSONObject requestBody = new JSONObject();
-            requestBody.put("model", "gpt-4o");
-            requestBody.put("messages", messagesArray);
-            requestBody.put("max_tokens", 50);
-
-            // Enviar la petición HTTP POST
-            URL url = new URL(API_URL);
+        String descripcion = "";
+        try{
+            String urlString = "https://api.openai.com/v1/responses";
+            URL url = new URL(urlString);
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod("POST");
             conn.setRequestProperty("Authorization", "Bearer " + ChatGPTKey.getKey());
             conn.setRequestProperty("Content-Type", "application/json");
             conn.setDoOutput(true);
+            
+            JSONObject contentText = new JSONObject();
+            contentText.put("type", "input_text");
+            contentText.put("text", "Analyze the uploaded image and give a description. Just give back simple text. And in your response only include nothing else and use simple text, not bold nor fancy styling and there is no need to make jumps of line, so don't use \\\\u, \\\\n. Also don't use any type of slash and quotes.");
+
+
+            JSONObject contentImage = new JSONObject();
+            contentImage.put("type", "input_image");
+            contentImage.put("image_url", "data:image/jpeg;base64," + image64);
+            contentImage.put("detail", "low");
+
+            JSONArray contentArray = new JSONArray();
+            contentArray.put(contentText);
+            contentArray.put(contentImage);
+
+            JSONObject userMessage = new JSONObject();
+            userMessage.put("role", "user");
+            userMessage.put("content", contentArray);
+
+            JSONArray inputArray = new JSONArray();
+            inputArray.put(userMessage);
+
+            JSONObject requestBody = new JSONObject();
+            requestBody.put("model", "gpt-4o-mini");
+            requestBody.put("input", inputArray);
 
             try (OutputStream os = conn.getOutputStream()) {
                 byte[] input = requestBody.toString().getBytes("utf-8");
                 os.write(input, 0, input.length);
             }
+            catch(IOException e){
+                System.err.println(e.getMessage());
+            }
 
-            // Leer la respuesta
-            StringBuilder response = new StringBuilder();
-            try (BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream(), "utf-8"))) {
-                String responseLine;
-                while ((responseLine = br.readLine()) != null) {
-                    response.append(responseLine.trim());
+            try (Scanner scanner = new Scanner(conn.getInputStream())) {
+                while (scanner.hasNext()) {
+                    String mssg = scanner.nextLine();
+                    System.out.println(mssg);
+                    if (mssg.contains("\"text\":")){
+                        descripcion = mssg.substring(mssg.indexOf("\"text\":") + 9, mssg.indexOf("\",")-1);
+                        descripcion = descripcion.replaceAll("[^a-zA-Z0-9\\sáéíóúÁÉÍÓÚñÑ.,]", "");
+                        return descripcion;
+                    }
                 }
+            }catch(IOException e){
+                System.err.println(e.getMessage());
             }
-
-            // Parsear la respuesta JSON
-            JSONObject jsonResponse = new JSONObject(response.toString());
-            JSONArray choices = jsonResponse.getJSONArray("choices");
-            if (choices.length() > 0) {
-                return choices.getJSONObject(0).getJSONObject("message").getString("content");
-            }
-        } catch (Exception e) {
-            System.err.println("Error: " + e.getMessage());
         }
-        return "Description not found.";
+        catch(IOException e){
+            System.err.println(e.getMessage());
+        }
+        return "";
     }
+
+
+    
 
     public static String makePostalCard(String prompt, String path, String fileName) {
         // Prepare the curl command as a list of arguments
