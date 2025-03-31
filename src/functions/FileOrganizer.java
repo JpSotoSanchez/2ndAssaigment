@@ -69,20 +69,20 @@ public class FileOrganizer {
             builder.redirectErrorStream(true);
             Process process = builder.start();
 
-            // Lee la salida del proceso
+            // Reads the procces exit lines
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
                 reader.lines().forEach(System.out::println);
             }
 
-            // Espera que el proceso termine y obtiene el código de salida
+            // Waits for the process to exit
             int exitCode = process.waitFor();
             if (exitCode != 0) {
-                System.err.println("El proceso terminó con error: " + exitCode);
+                System.err.println("The process ended with error: " + exitCode);
                 return false;
             }
             return true;
         } catch (IOException | InterruptedException e) {
-            System.err.println("Error ejecutando el comando: " + e.getMessage());
+            System.err.println("Error executing the command: " + e.getMessage());
             return false;
         }
     }
@@ -106,12 +106,12 @@ public class FileOrganizer {
             // Espera que el proceso termine y obtiene el código de salida
             int exitCode = process.waitFor();
             if (exitCode != 0) {
-                System.err.println("El proceso terminó con error: " + exitCode);
+                System.err.println("The process ended with error: " + exitCode);
                 return false;
             }
             return true;
         } catch (IOException | InterruptedException e) {
-            System.err.println("Error ejecutando el comando: " + e.getMessage());
+            System.err.println("Error executing the command: " + e.getMessage());
             return false;
         }
     }
@@ -130,8 +130,5 @@ public class FileOrganizer {
             return null;
         }
     }
-
-
-
-
+    
 }

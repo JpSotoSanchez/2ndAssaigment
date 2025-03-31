@@ -25,16 +25,28 @@ public class MakeVideo {
             if (isImage(file)) {
                 String videoFile = convertImageToVideo(file, path, width, height);
                 if (videoFile != null) {
-                    File videoFilePath = new File(path, videoFile);
-                    deleteFiles.add(videoFilePath.getAbsolutePath());
-                    String normalizedFile = normalizeVideo(videoFilePath, width, height);
-                    finalFiles.add(normalizedFile);
+                    deleteFiles.add(path+"/"+videoFile);
+                    
+                    String normalizedFile = normalizeVideo(path, videoFile, width, height);
                     deleteFiles.add(normalizedFile);
+                    
+                    String audioName = IaFunctions.generateAudioFromBase64ForImages(path, file,"speech.mp3");
+                    String normalizedWithAudio = addAudio(path, normalizedFile, audioName);
+                    System.out.println(audioName);
+                    FileOrganizer.deleteFile(path+"/"+audioName);
+                    finalFiles.add(path+"/"+normalizedWithAudio);
+                    
                 }
             } else if (inputFile.exists()) {
-                String normalizedFile = normalizeVideo(inputFile, width, height);
-                finalFiles.add(normalizedFile);
-                deleteFiles.add(normalizedFile);
+                String normalizedFile = normalizeVideo(path, file, width, height);
+                deleteFiles.add(path+"/"+normalizedFile);
+                
+                String audioName = IaFunctions.generateAudioFromBase64ForImages(path, file,"speech.mp3");
+                String normalizedWithAudio = addAudio(path, normalizedFile, audioName);
+                System.out.println(audioName);
+                finalFiles.add(path+"/"+normalizedWithAudio);
+                FileOrganizer.deleteFile(path+"/"+audioName);
+                deleteFiles.add(path+"/"+normalizedWithAudio);
             } else {
                 System.err.println("File not Found: " + inputFile.getAbsolutePath());
             }
@@ -70,27 +82,27 @@ public class MakeVideo {
         return success ? videoFileName : null;
     }
 
-    public static String normalizeVideo(File inputFile, int width, int height) {
-        String fileName = inputFile.getName();
+    public static String normalizeVideo(String path, String inputFile, int width, int height) {
+        String fileName = path+"/"+inputFile;
         if (fileName.startsWith("normalized_")) {
-            return inputFile.getAbsolutePath();
+            return fileName;
         }
 
-        String normalizedFile = inputFile.getParent() + "/normalized_" + fileName;
+        String normalizedFile ="normalized_" + inputFile;
         File outputFile = new File(normalizedFile);
 
         if (outputFile.exists()) {
             return outputFile.getAbsolutePath();
         }
 
-        System.out.println("Normalizando " + inputFile.getAbsolutePath());
+        System.out.println("Normalizando " + path+"/"+inputFile);
 
         boolean success = FileOrganizer.executeCMDCommand(new String[]{
-            "ffmpeg", "-i", inputFile.getAbsolutePath(), "-vf", "scale="+width+":"+height+":force_original_aspect_ratio=decrease,pad="+width+":"+height+":(ow-iw)/2:(oh-ih)/2",
-            "-c:v", "libx264", "-crf", "23", "-preset", "fast", "-r", "30", "-pix_fmt", "yuv420p", "-an","-y", outputFile.getAbsolutePath()
+            "ffmpeg", "-i", path+"/"+inputFile , "-vf", "scale="+width+":"+height+":force_original_aspect_ratio=decrease,pad="+width+":"+height+":(ow-iw)/2:(oh-ih)/2",
+            "-c:v", "libx264", "-crf", "23", "-preset", "fast", "-r", "30", "-pix_fmt", "yuv420p", "-an","-y", path+"/"+normalizedFile
         });
 
-        return success ? outputFile.getAbsolutePath() : inputFile.getAbsolutePath();
+        return success ? normalizedFile : fileName;
     }
 
     private static boolean isImage(String file) {
@@ -272,6 +284,24 @@ public class MakeVideo {
         };
         FileOrganizer.executeCMDCommand(command);
         System.out.println("Audio generated in" +path+"/"+audioName);
+    }
+
+    public static String addAudio(String path, String videoFile, String audioFile){
+        String outputFile = "audio_"+videoFile;
+        String[] command = {
+            "ffmpeg",
+            "-i", path+"/"+videoFile,        // Video de entrada
+            "-i", path+"/"+audioFile,        // Audio de entrada
+            "-c:v", "copy",                 // Copiar códec de video
+            "-c:a", "aac",                  // Códec de audio AAC
+            "-strict", "experimental",      // Opción para códec AAC
+            "-map", "0:v:0",                // Mapear video de la primera entrada
+            "-map", "1:a:0",                // Mapear audio de la segunda entrada
+            "-shortest",                    // Usar la duración más corta (de audio o video)
+            path+"/"+outputFile   // Video de salida con audio añadido
+        };
+        FileOrganizer.executeCMDCommand(command);
+        return outputFile;
     }
 }
 

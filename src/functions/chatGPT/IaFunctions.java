@@ -12,6 +12,8 @@ import java.util.Scanner;
 
 import env.ChatGPTKey;
 import functions.FileOrganizer;
+import functions.exif.ExifFunctions;
+import functions.ffmpeg.MakeVideo;
 
 public class IaFunctions {
 
@@ -129,16 +131,27 @@ public class IaFunctions {
             "https://api.openai.com/v1/audio/speech",
             "-H", "Content-Type: application/json",
             "-H", "Authorization: Bearer " + ChatGPTKey.getKey(),
-            "-d", "\"{\\\"model\\\": \\\"gpt-4o-mini-tts\\\", \\\"input\\\": \\\""+description+"\\\", \\\"voice\\\": \\\"coral\\\", \\\"instructions\\\": \\\"It is imporant that the audio has a duration of 5 seconds.\\\"}\"",
+            "-d", "\"{\\\"model\\\": \\\"gpt-4o-mini-tts\\\", \\\"input\\\": \\\""+description+"\\\", \\\"voice\\\": \\\"coral\\\", \\\"instructions\\\": \\\"Speech in a familiar way.\\\"}\"",
             "--output", path+"/"+fileName};
             FileOrganizer.executeCMDCommand(command);
             return fileName;
     }
 
-    public static String generateAudioFromBase64(String path, String imageName, String outputFile){
+    public static String generateAudioFromBase64ForImages(String path, String imageName, String outputFile){
         String description = base64ToDescription(path, imageName);
+        description = normalizeDescriptionForImages(description);
         String audioName = generateAudioFromText(description, path, outputFile);
         System.out.println("Audio made in: "+path+"/"+outputFile);
+        return audioName;
+    }
+    public static String generateAudioFromBase64ForVideos(String path, String videoName, String outputFile){
+        String frame = MakeVideo.saveFrame(videoName, path, "videoFrame.png");
+        String description = base64ToDescription(path, frame);
+        int seconds = ExifFunctions.extractDuration(path, videoName);
+        description = normalizeDescriptionForVideos(description,seconds);
+        String audioName = generateAudioFromText(description, path, outputFile);
+        System.out.println("Audio made in: "+path+"/"+outputFile);
+        FileOrganizer.deleteFile(path+"/"+frame);
         return audioName;
     }
     public static String generateAudioFromImageURL(String url, String path, String fileName){
@@ -175,7 +188,7 @@ public class IaFunctions {
             
             JSONObject contentText = new JSONObject();
             contentText.put("type", "input_text");
-            contentText.put("text", "Analyze the uploaded image and give a description. Just give back simple text. And in your response only include nothing else and use simple text, not bold nor fancy styling and there is no need to make jumps of line, so don't use \\\\u, \\\\n. Also don't use any type of slash and quotes.");
+            contentText.put("text", "Analyze the uploaded image and give a description. Just give back simple text.");
 
 
             JSONObject contentImage = new JSONObject();
@@ -269,6 +282,95 @@ public class IaFunctions {
             e.printStackTrace();
             return "";
         }
+        return "";
+    }
+
+    public static String normalizeDescriptionForImages(String description){
+        List<String> command = new ArrayList<>();
+        command.add("curl");
+        command.add("https://api.openai.com/v1/images/generations");
+        command.add("-H");
+        command.add("Content-Type: application/json");
+        command.add("-H");
+        command.add("Authorization: Bearer " + ChatGPTKey.getKey());
+        command.add("-d");
+        command.add("\"{\\\"model\\\": \\\"gpt-4o\\\", \\\"input\\\": \\\"Give me the resume in 12-14 words of the following description"+description+"\\\"}\"");
+        
+        String nDescription = "";
+
+        ProcessBuilder processBuilder = new ProcessBuilder(command);
+        try {
+            // Execute the command
+            Process process = processBuilder.start();
+            
+            // Wait for the process to finish
+            int exitCode = process.waitFor();
+            
+            if (exitCode == 0) {
+                BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    System.out.println(line);
+                    if (line.contains("\"text\":")) {
+                        nDescription = line.substring(line.indexOf(":") + 2).trim();
+                        nDescription = nDescription.substring(1, nDescription.length() - 1);  // Remove the extra quotes
+                        nDescription = nDescription.replaceAll("[^a-zA-Z0-9\\sáéíóúÁÉÍÓÚñÑ.,]", "");
+                    }
+                }
+                return nDescription;
+            } else {
+                System.out.println("Error during the normalization of the description");
+            }
+        } catch (IOException | InterruptedException e) {
+            e.printStackTrace();
+            return "";
+        }
+
+        return "";
+    }
+    
+    public static String normalizeDescriptionForVideos(String description, int duration){
+        int words = (15/5)*duration;
+        List<String> command = new ArrayList<>();
+        command.add("curl");
+        command.add("https://api.openai.com/v1/images/generations");
+        command.add("-H");
+        command.add("Content-Type: application/json");
+        command.add("-H");
+        command.add("Authorization: Bearer " + ChatGPTKey.getKey());
+        command.add("-d");
+        command.add("\"{\\\"model\\\": \\\"gpt-4o\\\", \\\"input\\\": \\\"Give me the resume in"+words+"words of the following description"+description+"\\\"}\"");
+        
+        String nDescription = "";
+
+        ProcessBuilder processBuilder = new ProcessBuilder(command);
+        try {
+            // Execute the command
+            Process process = processBuilder.start();
+            
+            // Wait for the process to finish
+            int exitCode = process.waitFor();
+            
+            if (exitCode == 0) {
+                BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    System.out.println(line);
+                    if (line.contains("\"text\":")) {
+                        nDescription = line.substring(line.indexOf(":") + 2).trim();
+                        nDescription = nDescription.substring(1, nDescription.length() - 1);  // Remove the extra quotes
+                        nDescription = nDescription.replaceAll("[^a-zA-Z0-9\\sáéíóúÁÉÍÓÚñÑ.,]", "");
+                    }
+                }
+                return nDescription;
+            } else {
+                System.out.println("Error during the normalization of the description");
+            }
+        } catch (IOException | InterruptedException e) {
+            e.printStackTrace();
+            return "";
+        }
+
         return "";
     }
 }
