@@ -68,10 +68,10 @@ public class MakeVideo {
         return deleteFiles;
     }
 
-    public static String convertImageToVideo(String imagePath, String outputPath, int width, int height) {
-        File imageFile = new File(outputPath, imagePath);
+    public static String convertImageToVideo(String imageName, String path, int width, int height) {
+        File imageFile = new File(path, imageName);
         String videoFileName = "video_" + imageFile.getName().replaceFirst("\\.(jpg|jpeg|png|bmp)$", ".mp4");
-        File videoFile = new File(outputPath, videoFileName);
+        File videoFile = new File(path, videoFileName);
 
         if (videoFile.exists()) {
             return videoFileName;
@@ -105,6 +105,29 @@ public class MakeVideo {
         boolean success = FileOrganizer.executeCMDCommand(new String[]{
             "ffmpeg", "-i", path+"/"+inputFile , "-vf", "scale="+width+":"+height+":force_original_aspect_ratio=decrease,pad="+width+":"+height+":(ow-iw)/2:(oh-ih)/2",
             "-c:v", "libx264", "-crf", "23", "-preset", "fast", "-r", "30", "-pix_fmt", "yuv420p", "-an","-y", path+"/"+normalizedFile
+        });
+
+        return success ? normalizedFile : fileName;
+    }
+
+    public static String normalizeVideoWithAudio(String path, String inputFile, int width, int height) {
+        String fileName = path+"/"+inputFile;
+        if (fileName.startsWith("normalized_")) {
+            return fileName;
+        }
+
+        String normalizedFile ="normalized_" + inputFile;
+        File outputFile = new File(normalizedFile);
+
+        if (outputFile.exists()) {
+            return outputFile.getAbsolutePath();
+        }
+
+        System.out.println("Normalizando " + path+"/"+inputFile);
+
+        boolean success = FileOrganizer.executeCMDCommand(new String[]{
+            "ffmpeg", "-i", path+"/"+inputFile , "-vf", "scale="+width+":"+height+":force_original_aspect_ratio=decrease,pad="+width+":"+height+":(ow-iw)/2:(oh-ih)/2",
+            "-c:v", "libx264", "-crf", "23", "-preset", "fast", "-r", "30", "-pix_fmt", "yuv420p", "-y", path+"/"+normalizedFile
         });
 
         return success ? normalizedFile : fileName;
@@ -312,54 +335,48 @@ public class MakeVideo {
         return outputFile;
     }
 
-    public static String concatenateVideos(String[][] metadata, String path, String outFileString, int width, int height) {
-        String outputFile = path + "/" + outFileString;
+    public static List<String> concatenateVideos(String[][] metadata, String path, String txtNameString, String outFileString, int width, int height) {
+        String concatFile = path + "/"+txtNameString;
+        String outputFile = path + "/"+outFileString;
+
+        FileOrganizer.deleteFile(concatFile);
         FileOrganizer.deleteFile(outputFile);
-    
-        List<String> command = new ArrayList<>(List.of("ffmpeg"));
-        List<String> filterComplex = new ArrayList<>();
-        int index = 0;
-    
+
+        List<String> finalFiles = new ArrayList<>();
+        List<String> deleteFiles = new ArrayList<>();
+
         for (String[] meta : metadata) {
             String file = meta[0];
-            String inputPath = path + "/" + file;
-            
+
             if (isImage(file)) {
-                command.addAll(List.of("-loop", "1", "-t", "5", "-i", inputPath));
-                filterComplex.add("[" + index + ":v]scale=" + width + ":" + height +
-                                  ":force_original_aspect_ratio=decrease,pad=" + width + ":" + height +
-                                  ":(ow-iw)/2:(oh-ih)/2,setsar=1[v" + index + "];");
-            
+                String videoFile = convertImageToVideo(file, path, width, height);
+                if (videoFile != null) {
+                    deleteFiles.add(path+"/"+videoFile);
+                    
+                    String normalizedFile = normalizeVideoWithAudio(path, videoFile, width, height);
+                    deleteFiles.add(path+"/"+normalizedFile);
+                    
+                    finalFiles.add(normalizedFile);                    
+                }
+            } else if (isVideo(file)) {
+                String normalizedFile = normalizeVideoWithAudio(path, file, width, height);
+                deleteFiles.add(path+"/"+normalizedFile);
+
+                finalFiles.add(normalizedFile);
             } else {
-                command.add("-i");
-                command.add(inputPath);
-                filterComplex.add("[" + index + ":v]scale=" + width + ":" + height + 
-                                  ":force_original_aspect_ratio=decrease,pad=" + width + ":" + height + 
-                                  ":(ow-iw)/2:(oh-ih)/2,setsar=1[v" + index + "];");
-            }
-            index++;
-        }
-    
-        // Construcción del filtro concat
-        StringBuilder concatFilter = new StringBuilder("[");
-        for (int i = 0; i < index; i++) {
-            concatFilter.append("v").append(i);
-            if (i < index - 1) {
-                concatFilter.append("][");
+                System.err.println("File not Found: " + path+"/"+file);
             }
         }
-        concatFilter.append("]concat=n=").append(index).append(":v=1:a=0[v]");
-        filterComplex.add(concatFilter.toString());
-    
-        // Agregar filtros y mapa de salida
-        command.add("-filter_complex");
-        command.add(String.join("", filterComplex));
-        command.addAll(List.of("-map", "[v]", outputFile));
-    
-        FileOrganizer.executeCMDCommand(command);
-        System.out.println("Video generated in: " + outputFile);
-        return outFileString;
+
+        if (!FileOrganizer.createConcatFile(path, finalFiles, concatFile)) return deleteFiles;
+
+        System.out.println("Executing FFmpeg to concatenate:");
+        boolean success = FileOrganizer.executeCMDCommand(new String[]{
+            "ffmpeg", "-f", "concat", "-safe", "0", "-i", concatFile, "-c:v", "libx264", "-crf", "23", "-c:a", "aac", "-preset", "fast", "-r", "30", "-pix_fmt", "yuv420p", "-y", outputFile
+        });
+
+        System.out.println("Finished the video");
+        return deleteFiles;
     }
-    
 }
 

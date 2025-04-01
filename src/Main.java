@@ -4,7 +4,6 @@ import functions.chatGPT.IaFunctions;
 import functions.ffmpeg.MakeVideo; // Import the new module
 
 import java.io.File;
-import java.io.IOException;
 import java.util.List;
 import java.util.Scanner;
 
@@ -62,13 +61,19 @@ public class Main {
         finalVideos[0][0]=postalCard;
         finalVideos[1][0]=videoFinal2;
         finalVideos[2][0]=videoFinal3;
-        String finalVideo = MakeVideo.concatenateVideos(finalVideos, path, "output4.mp4", width, height);
+        List<String> deleteFiles2 = MakeVideo.concatenateVideos(finalVideos, path, "finalConcat.txt", "output4.mp4", width, height);
+        
+        
         System.out.println("Process completed.");
         
-        // for (String string : deleteFiles) {
-        //     FileOrganizer.deleteFile(string);
-        // }
-        // FileOrganizer.deleteFile(path+"/"+"concat.txt");
+        for (String string : deleteFiles) {
+            FileOrganizer.deleteFile(string);
+        }
+        FileOrganizer.deleteFile(path+"/"+"concat.txt");
+        for (String string : deleteFiles2) {
+            FileOrganizer.deleteFile(string);
+        }
+        FileOrganizer.deleteFile(path+"/"+"finalConcat.txt");
         input.close();
     }
 }
