@@ -71,7 +71,7 @@ public class Main {
         }
         FileOrganizer.deleteFile(path+"/"+"concat.txt");
         for (String string : deleteFiles2) {
-            FileOrganizer.deleteFile(string);
+             FileOrganizer.deleteFile(string);
         }
         FileOrganizer.deleteFile(path+"/"+"finalConcat.txt");
         input.close();

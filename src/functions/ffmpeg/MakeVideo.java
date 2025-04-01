@@ -293,16 +293,32 @@ public class MakeVideo {
     }
 
     public static void overlayImage(String imageName, String videoName, String outputFileName, String path) {
-        String[] command = {
-            "ffmpeg", 
-            "-i", path + "/" + videoName,
-            "-i", path + "/" + imageName,
-            "-filter_complex",
-            "[1:v]scale=iw/1.5:ih/1.5[scaled];[0:v][scaled]overlay=(W-w)/2:(H-h)/2",
-            "-c:a", "copy", "-y",
-            path + "/" + outputFileName
-        };        
-        FileOrganizer.executeCMDCommand(command);
+        File prueba = new File(path, imageName);
+        if (prueba.exists()){
+            String[] command = {
+                "ffmpeg", 
+                "-i", path + "/" + videoName,
+                "-i", path + "/" + imageName,
+                "-filter_complex",
+                "[1:v]scale=iw/1.5:ih/1.5[scaled];[0:v][scaled]overlay=(W-w)/2:(H-h)/2",
+                "-c:a", "copy", "-y",
+                path + "/" + outputFileName
+            };        
+            FileOrganizer.executeCMDCommand(command);
+        }
+        else{
+            String[] command = {
+                "ffmpeg", 
+                "-i", path + "/" + videoName,
+                "-i", "src/exclusiveFiles/void.png",
+                "-filter_complex",
+                "[1:v]scale=iw/1.5:ih/1.5[scaled];[0:v][scaled]overlay=(W-w)/2:(H-h)/2",
+                "-c:a", "copy", "-y",
+                path + "/" + outputFileName
+            };        
+            FileOrganizer.executeCMDCommand(command);
+        }
+        
     }
 
     public static String saveFrame(String video, String path, String savedFrameName) {
@@ -353,10 +369,9 @@ public class MakeVideo {
         return outputFile;
     }
 
-    public static List<String> concatenateVideos(String[][] metadata, String path, String txtNameString, String outFileString, String audioToExtract, double delaySeconds,  int width, int height) {
+    public static List<String> concatenateVideos(String[][] metadata, String path, String txtNameString, String outFileString, int width, int height) {
         String concatFile = path + "/"+txtNameString;
-        String tempName = "temp0.mp4";
-        String outputFile = path + "/"+tempName;
+        String outputFile = path + "/"+outFileString;
 
         FileOrganizer.deleteFile(concatFile);
         FileOrganizer.deleteFile(outputFile);
@@ -403,7 +418,6 @@ public class MakeVideo {
             "-map", "0:v:0", "-map", "0:a:0?", 
             outputFile
         });
-        deleteFiles.add(outputFile);
 
         return deleteFiles;
     }
