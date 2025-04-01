@@ -15,6 +15,6 @@ public class ProbarSalidaFinal {
         finalVideos[1][0]="output2.mp4";
         finalVideos[2][0]="output3.mp4";
       
-        List<String> finalVideo = MakeVideo.concatenateVideos(finalVideos, path, "pruebaConcat.txt", "PruebaFinal.mp4", width, height);
+        List<String> finalVideo = MakeVideo.concatenateVideos(finalVideos, path, "pruebaConcat.txt", "PruebaFinal.mp4", finalVideos[1][0], 5, width, height);
     }
 }

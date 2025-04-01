@@ -353,9 +353,10 @@ public class MakeVideo {
         return outputFile;
     }
 
-    public static List<String> concatenateVideos(String[][] metadata, String path, String txtNameString, String outFileString, int width, int height) {
+    public static List<String> concatenateVideos(String[][] metadata, String path, String txtNameString, String outFileString, String audioToExtract, double delaySeconds,  int width, int height) {
         String concatFile = path + "/"+txtNameString;
-        String outputFile = path + "/"+outFileString;
+        String tempName = "temp0.mp4";
+        String outputFile = path + "/"+tempName;
 
         FileOrganizer.deleteFile(concatFile);
         FileOrganizer.deleteFile(outputFile);
@@ -371,10 +372,16 @@ public class MakeVideo {
                 if (videoFile != null) {
                     deleteFiles.add(path+"/"+videoFile);
                     
-                    String normalizedFile = normalizeVideoWithAudio(path, videoFile, width, height);
+                    String normalizedFile = normalizeVideo(path, videoFile, width, height);
                     deleteFiles.add(path+"/"+normalizedFile);
                     
-                    finalFiles.add(normalizedFile);                    
+                    String audioName = IaFunctions.generateAudioFromBase64ForImages(path, file,"audio_" + file.replaceFirst("\\.(jpg|jpeg|png|bmp)$", ".mp3"));
+                    deleteFiles.add(path+"/"+audioName);
+
+                    String normalizedWithAudio = addAudio(path, normalizedFile, audioName);
+                    finalFiles.add(normalizedWithAudio);
+                    deleteFiles.add(path+"/"+normalizedWithAudio);
+                    
                 }
             } else if (isVideo(file)) {
                 String normalizedFile = normalizeVideoWithAudio(path, file, width, height);
@@ -393,13 +400,41 @@ public class MakeVideo {
             "ffmpeg", "-f", "concat", "-safe", "0", "-i", concatFile, 
             "-c:v", "libx264", "-crf", "23", "-c:a", "aac", "-preset", "fast", 
             "-r", "30", "-pix_fmt", "yuv420p", "-y", 
-            "-map", "0:v:0", "-map", "0:a:0?", // Use '?' to ignore missing audio streams
+            "-map", "0:v:0", "-map", "0:a:0?", 
             outputFile
         });
-        
+        deleteFiles.add(outputFile);
 
-        System.out.println("Finished the video");
         return deleteFiles;
+    }
+
+    public static String extractAudio(String path, String videoName, String audioOutputName){
+        String[] command = {
+            "ffmpeg", "-i", path + "/" + videoName, "-vn",
+            "-af", "aresample=async=1",
+            "-acodec", "libmp3lame", "-q:a", "2",
+            path + "/" + audioOutputName
+        };
+        FileOrganizer.executeCMDCommand(command);
+        return audioOutputName;        
+    }
+
+    public static String addAudioWithDelay(String path, String videoInput, String audioInput, String outputVideo, double delaySeconds) {
+        // Convierte los segundos de retraso a milisegundos
+        String delay = String.format("%.0f", delaySeconds * 1000);
+    
+        String[] command = {
+            "ffmpeg", "-i", path+"/"+videoInput, 
+            "-i", path+"/"+audioInput, 
+            "-filter_complex", "[1:a]adelay=" + delay + "|"+ delay + "[delayed];[0:a][delayed]amix=inputs=2:duration=first",
+            "-c:v", "copy", 
+            "-c:a", "aac", 
+            "-b:a", "192k",
+            outputVideo
+        };
+        FileOrganizer.executeCMDCommand(command);
+    
+        return outputVideo;
     }
 }
 
