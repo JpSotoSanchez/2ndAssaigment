@@ -53,26 +53,22 @@ public class Main {
         System.out.println(new File(path, "concat.txt").getAbsolutePath());
         MakeVideo.generateCollage("concat.txt", videoFinal3, path, width, height);
     
-        String postalCardVideoPath = IaFunctions.makePostalCard(mood, path, imageFinal);
+        String postalCard = IaFunctions.makePostalCard(mood, path, imageFinal);
         
-        System.out.println(postalCardVideoPath);
+        System.out.println(path+"/"+postalCard);
         
         
         String [][]finalVideos = new String[3][1];
-        finalVideos[0][0]=postalCardVideoPath;
+        finalVideos[0][0]=postalCard;
         finalVideos[1][0]=videoFinal2;
         finalVideos[2][0]=videoFinal3;
-        List<String> deleteFiles2 = MakeVideo.generateFinalVideo(finalVideos, path, "concat2.txt", "output4.mp4", width, height);
+        String finalVideo = MakeVideo.concatenateVideos(finalVideos, path, "output4.mp4", width, height);
         System.out.println("Process completed.");
         
-        for (String string : deleteFiles2) {
-            FileOrganizer.deleteFile(string);
-        }
-        for (String string : deleteFiles) {
-            FileOrganizer.deleteFile(string);
-        }
-        FileOrganizer.deleteFile(path+"/"+"concat.txt");
-        FileOrganizer.deleteFile(path+"/"+"concat2.txt");
+        // for (String string : deleteFiles) {
+        //     FileOrganizer.deleteFile(string);
+        // }
+        // FileOrganizer.deleteFile(path+"/"+"concat.txt");
         input.close();
     }
 }

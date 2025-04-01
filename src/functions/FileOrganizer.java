@@ -49,10 +49,11 @@ public class FileOrganizer {
         }
     }
     
-    public static boolean createConcatFile(List<String> files, String concatFile) {
+    public static boolean createConcatFile(String path, List<String> files, String concatFile) {
         try (PrintWriter writer = new PrintWriter(new FileWriter(concatFile))) {
             for (String file : files) {
-                writer.println("file '" + file + "'");
+                writer.println("file '"+ file + "'");
+                System.out.println("file '"+ file + "'");
                 System.out.println("Agregado a concat.txt: file '" + file + "'");
             }
             return true;

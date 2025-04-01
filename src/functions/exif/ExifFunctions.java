@@ -65,35 +65,40 @@ public class ExifFunctions {
         return new String[]{fileName, creationDate, rotation};
     }
 
-    public static int extractDuration(String path, String fileName){
-        String[] command = new String[]{"exiftool", path+"/"+fileName};
+    public static int extractDuration(String path, String fileName) {
+        String[] command = new String[]{"exiftool", path + "/" + fileName};
         String duration = "";
         try {
             ProcessBuilder builder = new ProcessBuilder(command);
             builder.redirectErrorStream(true);
             Process process = builder.start();
-
+    
             BufferedReader br = new BufferedReader(new InputStreamReader(process.getInputStream()));
             String line;
             while ((line = br.readLine()) != null) {
                 System.out.println("[EXIF] " + line); // Debug: Show the exiftool output
-
+    
                 if (line.contains("Media Duration")) {
                     duration = line.substring(line.indexOf(":") + 1).trim();
+                    break; // Found duration, exit loop
                 }
             }
         } catch (IOException e) {
             e.printStackTrace();
         }
-         String[] partes = duration.split(":");
-        
+    
+        if (duration.isEmpty()) {
+            return 5; // Return 5 or handle the case where duration was not found
+        }
+    
+        String[] partes = duration.split(":");
         int horas = Integer.parseInt(partes[0]);
         int minutos = Integer.parseInt(partes[1]);
         int segundos = Integer.parseInt(partes[2]);
-
+    
         // Convertimos todo a segundos
         int totalSeconds = (horas * 3600) + (minutos * 60) + segundos;
-
+    
         return totalSeconds;
     }
 }

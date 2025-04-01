@@ -32,14 +32,13 @@ public class ProbarNuevoGenerateVideo {
             System.out.println("File: " + meta[0] + ", Date: " + meta[1] + ", Rotation: " + meta[2]);
         }
 
-        String imageFinal = "PostalCard1.png";
         String videoFinal2 = "output2.mp4";
-        String videoFinal3 = "output3.mp4";
         // Call the function to generate the video with FFMpeg
         System.out.println("\nGenerating final videos...");
 
         int width = 1920;
         int height = 1080;
         List<String> deleteFiles = MakeVideo.generateVideo(metadataList, path, "concat.txt", videoFinal2, width, height);
+        MakeVideo.generateCollage("concat.txt", "pruebaCollage.mp4", path, width, height);
     }    
 }

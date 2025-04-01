@@ -151,6 +151,7 @@ public class IaFunctions {
         String description = base64ToDescription(path, frame);
         System.out.println(description);
         int seconds = ExifFunctions.extractDuration(path, videoName);
+        System.out.println("Seconds = "+seconds);
         description = normalizeDescriptionForVideos(description,seconds);
         System.out.println(description);
         String audioName = generateAudioFromText(description, path, outputFile);
@@ -243,8 +244,6 @@ public class IaFunctions {
         return "";
     }
 
-
-    
 
     public static String makePostalCard(String prompt, String path, String fileName) {
         // Prepare the curl command as a list of arguments
@@ -344,7 +343,7 @@ public class IaFunctions {
         command.add("-H");
         command.add("Authorization: Bearer " + ChatGPTKey.getKey());
         command.add("-d");
-        command.add("\"{\\\"model\\\": \\\"gpt-4o\\\", \\\"input\\\": \\\"Give me the resume in"+words+"words of the following description"+description+"\\\"}\"");
+        command.add("\"{\\\"model\\\": \\\"gpt-4o\\\", \\\"input\\\": \\\"Give me the resume in "+words+" words of the following description: "+description+"\\\"}\"");
         
         String nDescription = "";
 

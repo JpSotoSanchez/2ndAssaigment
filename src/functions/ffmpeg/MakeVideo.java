@@ -45,7 +45,7 @@ public class MakeVideo {
                 String frame = MakeVideo.saveFrame(file, path, "frame.png");
                 deleteFiles.add(frame);
                 
-                String audioName = IaFunctions.generateAudioFromBase64ForImages(path, frame,"audio_" + file.replaceFirst("\\.(mp4|mov|avi)$", ".mp3"));
+                String audioName = IaFunctions.generateAudioFromBase64ForVideos(path, frame,"audio_" + file.replaceFirst("\\.(mp4|mov|avi)$", ".mp3"));
                 deleteFiles.add(path+"/"+audioName);
 
                 String normalizedWithAudio = addAudio(path, normalizedFile, audioName);
@@ -57,7 +57,7 @@ public class MakeVideo {
             }
         }
 
-        if (!FileOrganizer.createConcatFile(finalFiles, concatFile)) return deleteFiles;
+        if (!FileOrganizer.createConcatFile(path, finalFiles, concatFile)) return deleteFiles;
 
         System.out.println("Executing FFmpeg to concatenate:");
         boolean success = FileOrganizer.executeCMDCommand(new String[]{
@@ -136,7 +136,7 @@ public class MakeVideo {
                 line = line.trim();  // Eliminar espacios en blanco adicionales
                 if (!line.isEmpty()) {  // Si la línea no está vacía
                     // Asumimos que cada línea empieza con "file:" y termina con un carácter extra (por ejemplo, comillas)
-                    command.append("-i \"").append(line.substring(6, line.length()-1)).append("\" ");
+                    command.append("-i \"").append(path+"/").append(line.substring(6, line.length()-1)).append("\" ");
                     numVideos++;
                 }
             }
@@ -267,10 +267,10 @@ public class MakeVideo {
     public static String saveFrame(String video, String path, String savedFrameName) {
         String[] command = {
             "ffmpeg",
-            "-ss", "00:00:01",   // Posición en el tiempo (10 segundos)
+            "-ss", "00:00:00",   
             "-i", path+"/"+video,
             "-frames:v", "1",
-            "-update", "1", "-y",      // Sobrescribe la imagen de salida
+            "-update", "1", "-y",      
             path+"/"+savedFrameName
         };
         FileOrganizer.executeCMDCommand(command);
@@ -306,32 +306,60 @@ public class MakeVideo {
             "-strict", "experimental",      // Opción para códec AAC
             "-map", "0:v:0",                // Mapear video de la primera entrada
             "-map", "1:a:0",                // Mapear audio de la segunda entrada
-            "-shortest",                    // Usar la duración más corta (de audio o video)
             path+"/"+outputFile   // Video de salida con audio añadido
         };
         FileOrganizer.executeCMDCommand(command);
         return outputFile;
     }
 
-    public static List<String> generateFinalVideo(String[][] metadata, String path, String txtNameString, String outFileString, int width, int height) {
-        String concatFile = path + "/"+txtNameString;
-        String outputFile = path + "/"+outFileString;
-
-        FileOrganizer.deleteFile(concatFile);
+    public static String concatenateVideos(String[][] metadata, String path, String outFileString, int width, int height) {
+        String outputFile = path + "/" + outFileString;
         FileOrganizer.deleteFile(outputFile);
-
-        List<String> finalFiles = new ArrayList<>();
-        List<String> deleteFiles = new ArrayList<>();
-
-        if (!FileOrganizer.createConcatFile(finalFiles, concatFile)) return deleteFiles;
-
-        System.out.println("Executing FFmpeg to concatenate:");
-        boolean success = FileOrganizer.executeCMDCommand(new String[]{
-            "ffmpeg", "-f", "concat", "-safe", "0", "-i", concatFile, "-c:v", "libx264", "-crf", "23", "-preset", "fast", "-r", "30", "-pix_fmt", "yuv420p", "-y", outputFile
-        });
-
-        System.out.println("Finished the video");
-        return deleteFiles;
+    
+        List<String> command = new ArrayList<>(List.of("ffmpeg"));
+        List<String> filterComplex = new ArrayList<>();
+        int index = 0;
+    
+        for (String[] meta : metadata) {
+            String file = meta[0];
+            String inputPath = path + "/" + file;
+            
+            if (isImage(file)) {
+                command.addAll(List.of("-loop", "1", "-t", "5", "-i", inputPath));
+                filterComplex.add("[" + index + ":v]scale=" + width + ":" + height +
+                                  ":force_original_aspect_ratio=decrease,pad=" + width + ":" + height +
+                                  ":(ow-iw)/2:(oh-ih)/2,setsar=1[v" + index + "];");
+            
+            } else {
+                command.add("-i");
+                command.add(inputPath);
+                filterComplex.add("[" + index + ":v]scale=" + width + ":" + height + 
+                                  ":force_original_aspect_ratio=decrease,pad=" + width + ":" + height + 
+                                  ":(ow-iw)/2:(oh-ih)/2,setsar=1[v" + index + "];");
+            }
+            index++;
+        }
+    
+        // Construcción del filtro concat
+        StringBuilder concatFilter = new StringBuilder("[");
+        for (int i = 0; i < index; i++) {
+            concatFilter.append("v").append(i);
+            if (i < index - 1) {
+                concatFilter.append("][");
+            }
+        }
+        concatFilter.append("]concat=n=").append(index).append(":v=1:a=0[v]");
+        filterComplex.add(concatFilter.toString());
+    
+        // Agregar filtros y mapa de salida
+        command.add("-filter_complex");
+        command.add(String.join("", filterComplex));
+        command.addAll(List.of("-map", "[v]", outputFile));
+    
+        FileOrganizer.executeCMDCommand(command);
+        System.out.println("Video generated in: " + outputFile);
+        return outFileString;
     }
+    
 }
 
