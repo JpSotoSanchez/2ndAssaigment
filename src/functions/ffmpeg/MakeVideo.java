@@ -390,8 +390,13 @@ public class MakeVideo {
 
         System.out.println("Executing FFmpeg to concatenate:");
         boolean success = FileOrganizer.executeCMDCommand(new String[]{
-            "ffmpeg", "-f", "concat", "-safe", "0", "-i", concatFile, "-c:v", "libx264", "-crf", "23", "-c:a", "aac", "-preset", "fast", "-r", "30", "-pix_fmt", "yuv420p", "-y", outputFile
+            "ffmpeg", "-f", "concat", "-safe", "0", "-i", concatFile, 
+            "-c:v", "libx264", "-crf", "23", "-c:a", "aac", "-preset", "fast", 
+            "-r", "30", "-pix_fmt", "yuv420p", "-y", 
+            "-map", "0:v:0", "-map", "0:a:0?", // Use '?' to ignore missing audio streams
+            outputFile
         });
+        
 
         System.out.println("Finished the video");
         return deleteFiles;

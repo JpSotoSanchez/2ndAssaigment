@@ -1,2 +1,0 @@
-file 'normalized_video_PostalCard1.mp4'
-file 'normalized_PruebaFinal.mp4'
