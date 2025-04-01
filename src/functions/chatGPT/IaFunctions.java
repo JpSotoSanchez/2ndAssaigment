@@ -81,9 +81,9 @@ public class IaFunctions {
             int exitCode = process.waitFor();
             
             if (exitCode == 0) {
-                System.out.println("Imagen descargada y guardada en " + path);
+                System.out.println("Image saved in " + path);
             } else {
-                System.out.println("Hubo un error al descargar la imagen.");
+                System.out.println("Error during the image saving");
             }
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
@@ -139,9 +139,7 @@ public class IaFunctions {
 
     public static String generateAudioFromBase64ForImages(String path, String imageName, String outputFile){
         String description = base64ToDescription(path, imageName);
-        System.out.println(description);
         description = normalizeDescriptionForImages(description);
-        System.out.println(description);
         String audioName = generateAudioFromText(description, path, outputFile);
         System.out.println("Audio made in: "+path+"/"+outputFile);
         return audioName;
@@ -149,11 +147,8 @@ public class IaFunctions {
     public static String generateAudioFromBase64ForVideos(String path, String videoName, String outputFile){
         String frame = MakeVideo.saveFrame(videoName, path, "videoFrame.png");
         String description = base64ToDescription(path, frame);
-        System.out.println(description);
         int seconds = ExifFunctions.extractDuration(path, videoName);
-        System.out.println("Seconds = "+seconds);
         description = normalizeDescriptionForVideos(description,seconds);
-        System.out.println(description);
         String audioName = generateAudioFromText(description, path, outputFile);
         System.out.println("Audio made in: "+path+"/"+outputFile);
         FileOrganizer.deleteFile(path+"/"+frame);
@@ -167,14 +162,12 @@ public class IaFunctions {
 
     public static String generateImageFromBase64(String path, String imageName, String outputFile){
         String description = base64ToDescription(path, imageName);
-        System.out.println(description);
         String image = generateImageFromText(description, path, outputFile);
         return image;
     }
 
     public static String generatePostalCardFromBase64(String path, String imageName, String outputFile){
         String description = base64ToDescription(path, imageName);
-        System.out.println(description);
         String image = makePostalCard(description, path, outputFile);
         return image;
     }

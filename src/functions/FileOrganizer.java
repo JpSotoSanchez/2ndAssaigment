@@ -54,7 +54,6 @@ public class FileOrganizer {
             for (String file : files) {
                 writer.println("file '"+ file + "'");
                 System.out.println("file '"+ file + "'");
-                System.out.println("Agregado a concat.txt: file '" + file + "'");
             }
             return true;
         } catch (IOException e) {

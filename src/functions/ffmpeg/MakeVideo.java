@@ -33,7 +33,6 @@ public class MakeVideo {
                     deleteFiles.add(path+"/"+audioName);
 
                     String normalizedWithAudio = addAudio(path, normalizedFile, audioName);
-                    System.out.println(audioName);
                     finalFiles.add(normalizedWithAudio);
                     deleteFiles.add(path+"/"+normalizedWithAudio);
                     
@@ -49,7 +48,6 @@ public class MakeVideo {
                 deleteFiles.add(path+"/"+audioName);
 
                 String normalizedWithAudio = addAudio(path, normalizedFile, audioName);
-                System.out.println(audioName);
                 finalFiles.add(normalizedWithAudio);
                 deleteFiles.add(path+"/"+normalizedWithAudio);
             } else {
@@ -77,7 +75,7 @@ public class MakeVideo {
             return videoFileName;
         }
 
-        System.out.println("Ejecutando FFmpeg para convertir imagen a video...");
+        System.out.println("Executing FFMPEG to turn an image to a video...");
         boolean success = FileOrganizer.executeCMDCommand(new String[]{
             "ffmpeg", "-loop", "1", "-i", imageFile.getAbsolutePath(), "-t", "5",
             "-vf", "scale="+width+":"+height+":force_original_aspect_ratio=decrease,pad="+width+":"+height+":(ow-iw)/2:(oh-ih)/2",
@@ -86,6 +84,30 @@ public class MakeVideo {
 
         return success ? videoFileName : null;
     }
+
+    public static String convertImageToVideoWithSilencedAudio(String imageName, String path, int width, int height) {
+        File imageFile = new File(path, imageName);
+        String videoFileName = "video_" + imageFile.getName().replaceFirst("\\.(jpg|jpeg|png|bmp)$", ".mp4");
+        File videoFile = new File(path, videoFileName);
+    
+        if (videoFile.exists()) {
+            return videoFileName; // Video already exists, return success
+        }
+    
+        System.out.println("Executing FFMPEG to turn an image to a video with silent audio...");
+        boolean success = FileOrganizer.executeCMDCommand(new String[]{
+            "ffmpeg", "-loop", "1", "-i", imageFile.getAbsolutePath(), "-t", "5", // Video duration 5 seconds
+            "-f", "lavfi", "-i", "anullsrc=r=44100:cl=stereo", // Silent audio for 5 seconds
+            "-vf", "scale=" + width + ":" + height + ":force_original_aspect_ratio=decrease," +
+                  "pad=" + width + ":" + height + ":(ow-iw)/2:(oh-ih)/2", // Scale and pad video
+            "-c:v", "libx264", "-crf", "23", "-preset", "fast", "-r", "30", "-pix_fmt", "yuv420p", // Video encoding options
+            "-c:a", "aac", "-b:a", "192k", // Audio codec settings
+            "-y", videoFile.getAbsolutePath() // Output file path
+        });
+    
+        return success ? videoFileName : null;
+    }
+    
 
     public static String normalizeVideo(String path, String inputFile, int width, int height) {
         String fileName = path+"/"+inputFile;
@@ -100,7 +122,7 @@ public class MakeVideo {
             return outputFile.getAbsolutePath();
         }
 
-        System.out.println("Normalizando " + path+"/"+inputFile);
+        System.out.println("Giving format to " + path+"/"+inputFile);
 
         boolean success = FileOrganizer.executeCMDCommand(new String[]{
             "ffmpeg", "-i", path+"/"+inputFile , "-vf", "scale="+width+":"+height+":force_original_aspect_ratio=decrease,pad="+width+":"+height+":(ow-iw)/2:(oh-ih)/2",
@@ -123,7 +145,7 @@ public class MakeVideo {
             return outputFile.getAbsolutePath();
         }
 
-        System.out.println("Normalizando " + path+"/"+inputFile);
+        System.out.println("Giving format to " + path+"/"+inputFile);
 
         boolean success = FileOrganizer.executeCMDCommand(new String[]{
             "ffmpeg", "-i", path+"/"+inputFile , "-vf", "scale="+width+":"+height+":force_original_aspect_ratio=decrease,pad="+width+":"+height+":(ow-iw)/2:(oh-ih)/2",
@@ -170,8 +192,6 @@ public class MakeVideo {
         // Determinar cómo distribuir los videos en filas y columnas
         int rows = (int) Math.ceil(Math.sqrt(numVideos)); // Número de filas
         int cols = (int) Math.ceil((double) numVideos / rows); // Número de columnas
-        System.out.println("Rows: " + rows);
-        System.out.println("Cols: " + cols);
 
         // Crear el filtro complejo para escalado y apilamiento
         command.append("-filter_complex \"");
@@ -179,8 +199,6 @@ public class MakeVideo {
         // Calcular dimensiones para cada video
         int nHeight = height / rows;
         int nWidth = width / cols;
-        System.out.println("Height: " + nHeight);
-        System.out.println("Width: " + nWidth);
 
         // Escalar cada video y asignarle una etiqueta [vX]
         for (int i = 0; i < numVideos; i++) {

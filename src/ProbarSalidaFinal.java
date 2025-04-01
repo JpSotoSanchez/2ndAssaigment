@@ -11,12 +11,10 @@ public class ProbarSalidaFinal {
         String path = "src/multimedia";
         String postalCard = "PostalCard1.png";
         String [][]finalVideos = new String[3][1];
-        finalVideos[0][0]="PostalCard1.png";
+        finalVideos[0][0]=postalCard;
         finalVideos[1][0]="output2.mp4";
         finalVideos[2][0]="output3.mp4";
       
         List<String> finalVideo = MakeVideo.concatenateVideos(finalVideos, path, "pruebaConcat.txt", "PruebaFinal.mp4", width, height);
-        
-        System.out.println("Process completed.");
     }
 }
