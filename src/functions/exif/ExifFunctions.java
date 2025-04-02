@@ -78,7 +78,7 @@ public class ExifFunctions {
             while ((line = br.readLine()) != null) {
                 System.out.println("[EXIF] " + line); // Debug: Show the exiftool output
     
-                if (line.contains("Media Duration")) {
+                if (line.contains("Duration")) {
                     duration = line.substring(line.indexOf(":") + 1).trim();
                     break; // Found duration, exit loop
                 }

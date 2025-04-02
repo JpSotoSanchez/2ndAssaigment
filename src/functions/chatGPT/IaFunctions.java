@@ -140,6 +140,7 @@ public class IaFunctions {
     public static String generateAudioFromBase64ForImages(String path, String imageName, String outputFile){
         String description = base64ToDescription(path, imageName);
         description = normalizeDescriptionForImages(description);
+        description = normalizeDescriptionForPostCard(description);
         String audioName = generateAudioFromText(description, path, outputFile);
         System.out.println("Audio made in: "+path+"/"+outputFile);
         return audioName;
@@ -168,6 +169,7 @@ public class IaFunctions {
 
     public static String generatePostalCardFromBase64(String path, String imageName, String outputFile){
         String description = base64ToDescription(path, imageName);
+        description = normalizeDescriptionForPostCard(description);
         String image = makePostalCard(description, path, outputFile);
         return image;
     }
@@ -327,7 +329,7 @@ public class IaFunctions {
     }
     
     public static String normalizeDescriptionForVideos(String description, int duration){
-        int words = (15/5)*duration;
+        int words = 3*duration;
         List<String> command = new ArrayList<>();
         command.add("curl");
         command.add("https://api.openai.com/v1/responses");
@@ -371,4 +373,93 @@ public class IaFunctions {
 
         return "";
     }
+
+    public static String normalizeDescriptionForVideosAsScript(String description, int duration){
+        List<String> command = new ArrayList<>();
+        command.add("curl");
+        command.add("https://api.openai.com/v1/responses");
+        command.add("-H");
+        command.add("Content-Type: application/json");
+        command.add("-H");
+        command.add("Authorization: Bearer " + ChatGPTKey.getKey());
+        command.add("-d");
+        command.add("\"{\\\"model\\\": \\\"gpt-4o\\\", \\\"input\\\": \\\"Generate a narration for a commercial based on the following description and using the same amount of words: "+description+". The output should be like a story. Remember to use the same amount of words\\\"}\"");
+       
+        String nDescription = "";
+
+        ProcessBuilder processBuilder = new ProcessBuilder(command);
+        try {
+            // Execute the command
+            Process process = processBuilder.start();
+            
+            // Wait for the process to finish
+            int exitCode = process.waitFor();
+            
+            if (exitCode == 0) {
+                BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    System.out.println(line);
+                    if (line.contains("\"text\":")) {
+                        nDescription = line.substring(line.indexOf(":") + 2).trim();
+                        nDescription = nDescription.substring(1, nDescription.length() - 1);  // Remove the extra quotes
+                        nDescription = nDescription.replaceAll("[^a-zA-Z0-9\\sáéíóúÁÉÍÓÚñÑ.,]", "");
+                        return nDescription;
+                    }
+                }
+                return nDescription;
+            } else {
+                System.out.println("Error during the normalization of the description");
+            }
+        } catch (IOException | InterruptedException e) {
+            e.printStackTrace();
+            return "";
+        }
+        return "";
+    }
+
+    public static String normalizeDescriptionForPostCard(String description){
+        List<String> command = new ArrayList<>();
+        command.add("curl");
+        command.add("https://api.openai.com/v1/responses");
+        command.add("-H");
+        command.add("Content-Type: application/json");
+        command.add("-H");
+        command.add("Authorization: Bearer " + ChatGPTKey.getKey());
+        command.add("-d");
+        command.add("\"{\\\"model\\\": \\\"gpt-4o\\\", \\\"input\\\": \\\"Normalize this description to make a postcard description about all of this: "+description+"\\\"}\"");
+       
+        String nDescription = "";
+
+        ProcessBuilder processBuilder = new ProcessBuilder(command);
+        try {
+            // Execute the command
+            Process process = processBuilder.start();
+            
+            // Wait for the process to finish
+            int exitCode = process.waitFor();
+            
+            if (exitCode == 0) {
+                BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    System.out.println(line);
+                    if (line.contains("\"text\":")) {
+                        nDescription = line.substring(line.indexOf(":") + 2).trim();
+                        nDescription = nDescription.substring(1, nDescription.length() - 1);  // Remove the extra quotes
+                        nDescription = nDescription.replaceAll("[^a-zA-Z0-9\\sáéíóúÁÉÍÓÚñÑ.,]", "");
+                        return nDescription;
+                    }
+                }
+                return nDescription;
+            } else {
+                System.out.println("Error during the normalization of the description");
+            }
+        } catch (IOException | InterruptedException e) {
+            e.printStackTrace();
+            return "";
+        }
+        return "";
+    }
+
 }

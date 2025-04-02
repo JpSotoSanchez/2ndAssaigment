@@ -5,6 +5,7 @@ import java.util.*;
 
 import functions.FileOrganizer;
 import functions.chatGPT.IaFunctions;
+import functions.exif.ExifFunctions;
 
 public class MakeVideo {
 
@@ -15,11 +16,17 @@ public class MakeVideo {
         FileOrganizer.deleteFile(concatFile);
         FileOrganizer.deleteFile(outputFile);
 
+        String tempVideo = "tempConcatenate.mp4";
+        outputFile = path + "/" + tempVideo;
+
         List<String> finalFiles = new ArrayList<>();
         List<String> deleteFiles = new ArrayList<>();
 
+        String description = "";
+        String tempDescription = "";
         for (String[] meta : metadata) {
             String file = meta[0];
+            tempDescription = "";
 
             if (isImage(file)) {
                 String videoFile = convertImageToVideo(file, path, width, height);
@@ -29,13 +36,10 @@ public class MakeVideo {
                     String normalizedFile = normalizeVideo(path, videoFile, width, height);
                     deleteFiles.add(path+"/"+normalizedFile);
                     
-                    String audioName = IaFunctions.generateAudioFromBase64ForImages(path, file,"audio_" + file.replaceFirst("\\.(jpg|jpeg|png|bmp)$", ".mp3"));
-                    deleteFiles.add(path+"/"+audioName);
+                    tempDescription = IaFunctions.base64ToDescription(path, file);
+                    tempDescription = IaFunctions.normalizeDescriptionForImages(tempDescription);
 
-                    String normalizedWithAudio = addAudio(path, normalizedFile, audioName);
-                    finalFiles.add(normalizedWithAudio);
-                    deleteFiles.add(path+"/"+normalizedWithAudio);
-                    
+                    finalFiles.add(normalizedFile);                    
                 }
             } else if (isVideo(file)) {
                 String normalizedFile = normalizeVideo(path, file, width, height);
@@ -44,15 +48,14 @@ public class MakeVideo {
                 String frame = MakeVideo.saveFrame(file, path, "frame.png");
                 deleteFiles.add(frame);
                 
-                String audioName = IaFunctions.generateAudioFromBase64ForVideos(path, frame,"audio_" + file.replaceFirst("\\.(mp4|mov|avi)$", ".mp3"));
-                deleteFiles.add(path+"/"+audioName);
+                tempDescription = IaFunctions.base64ToDescription(path, frame);
+                tempDescription = IaFunctions.normalizeDescriptionForImages(tempDescription);
 
-                String normalizedWithAudio = addAudio(path, normalizedFile, audioName);
-                finalFiles.add(normalizedWithAudio);
-                deleteFiles.add(path+"/"+normalizedWithAudio);
+                finalFiles.add(normalizedFile);
             } else {
                 System.err.println("File not Found: " + path+"/"+file);
             }
+            description += tempDescription;
         }
 
         if (!FileOrganizer.createConcatFile(path, finalFiles, concatFile)) return deleteFiles;
@@ -61,8 +64,15 @@ public class MakeVideo {
         boolean success = FileOrganizer.executeCMDCommand(new String[]{
             "ffmpeg", "-f", "concat", "-safe", "0", "-i", concatFile, "-c:v", "libx264", "-crf", "23", "-preset", "fast", "-r", "30", "-pix_fmt", "yuv420p", "-y", outputFile
         });
-
+        System.out.println("Description: " +description);
+        description = IaFunctions.normalizeDescriptionForVideosAsScript(description, ExifFunctions.extractDuration(path, outFileString));
+        System.out.println("Description: " +description);
+        String audioFile = IaFunctions.generateAudioFromText(description, path, "script.mp3" );
+        System.out.println("Audio: "+audioFile);
+        String finalConcat = addAudio(path, tempVideo, audioFile, outFileString);
         System.out.println("Finished the video");
+        deleteFiles.add(audioFile);
+        deleteFiles.add(outputFile);
         return deleteFiles;
     }
 
@@ -352,8 +362,7 @@ public class MakeVideo {
         System.out.println("Audio generated in" +path+"/"+audioName);
     }
 
-    public static String addAudio(String path, String videoFile, String audioFile){
-        String outputFile = "audio_"+videoFile;
+    public static String addAudio(String path, String videoFile, String audioFile, String outputFile){
         String[] command = {
             "ffmpeg",
             "-i", path+"/"+videoFile,        // Video de entrada
@@ -393,7 +402,7 @@ public class MakeVideo {
                     String audioName = IaFunctions.generateAudioFromBase64ForImages(path, file,"audio_" + file.replaceFirst("\\.(jpg|jpeg|png|bmp)$", ".mp3"));
                     deleteFiles.add(path+"/"+audioName);
 
-                    String normalizedWithAudio = addAudio(path, normalizedFile, audioName);
+                    String normalizedWithAudio = addAudio(path, normalizedFile, audioName, "audio_"+normalizedFile);
                     finalFiles.add(normalizedWithAudio);
                     deleteFiles.add(path+"/"+normalizedWithAudio);
                     
@@ -440,7 +449,7 @@ public class MakeVideo {
         String[] command = {
             "ffmpeg", "-i", path+"/"+videoInput, 
             "-i", path+"/"+audioInput, 
-            "-filter_complex", "[1:a]adelay=" + delay + "|"+ delay + "[delayed];[0:a][delayed]amix=inputs=2:duration=first",
+            "-filter_complex", "[1:a]adelay=" + delay + "|"+ delay + "[delayed];[0:a][delayed]amix=inputs=2: =first",
             "-c:v", "copy", 
             "-c:a", "aac", 
             "-b:a", "192k",
